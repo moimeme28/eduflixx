@@ -39,27 +39,14 @@ function AuthPage() {
     setNotice(null);
     try {
       if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: window.location.origin + "/dashboard",
-            data: { role },
-          },
-        });
-        if (error) throw error;
-        if (data.session) {
-          navigate({ to: "/dashboard" });
-        } else {
-          // No session returned: try signing in straight away so no email step is needed.
-          const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-          if (signInError) throw signInError;
-          navigate({ to: "/dashboard" });
-        }
-
+        await signUp({ data: { email, password, role } });
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) throw signInError;
+        navigate({ to: "/dashboard" });
       } else {
 
         const { error } = await supabase.auth.signInWithPassword({ email, password });
+
         if (error) throw error;
         navigate({ to: "/dashboard" });
       }
