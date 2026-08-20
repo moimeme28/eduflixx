@@ -51,8 +51,12 @@ function AuthPage() {
         if (data.session) {
           navigate({ to: "/dashboard" });
         } else {
-          setNotice("Check your email to confirm your account, then sign in.");
+          // No session returned: try signing in straight away so no email step is needed.
+          const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+          if (signInError) throw signInError;
+          navigate({ to: "/dashboard" });
         }
+
       } else {
 
         const { error } = await supabase.auth.signInWithPassword({ email, password });
