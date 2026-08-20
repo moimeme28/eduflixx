@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { signUpWithoutConfirmation as signUp } from "@/lib/signup.functions";
 
 import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
@@ -41,20 +40,16 @@ function AuthPage() {
     setNotice(null);
     try {
       if (mode === "signup") {
-        try {
-          await signUp({ data: { email, password, role } });
-        } catch {
-          // Admin signup unavailable — fall back to the standard signup flow.
-          const { error: suError } = await supabase.auth.signUp({
-            email,
-            password,
-            options: { emailRedirectTo: window.location.origin + "/dashboard", data: { role } },
-          });
-          if (suError) throw suError;
-        }
+        const { error: suError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: window.location.origin + "/dashboard", data: { role } },
+        });
+        if (suError) throw suError;
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError) throw signInError;
         navigate({ to: "/dashboard" });
+
 
       } else {
 
