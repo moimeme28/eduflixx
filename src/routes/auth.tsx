@@ -41,10 +41,21 @@ function AuthPage() {
     setNotice(null);
     try {
       if (mode === "signup") {
-        await signUp({ data: { email, password, role } });
+        try {
+          await signUp({ data: { email, password, role } });
+        } catch {
+          // Admin signup unavailable — fall back to the standard signup flow.
+          const { error: suError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: { emailRedirectTo: window.location.origin + "/dashboard", data: { role } },
+          });
+          if (suError) throw suError;
+        }
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError) throw signInError;
         navigate({ to: "/dashboard" });
+
       } else {
 
         const { error } = await supabase.auth.signInWithPassword({ email, password });
