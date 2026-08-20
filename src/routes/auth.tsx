@@ -39,7 +39,7 @@ function AuthPage() {
     setNotice(null);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -48,8 +48,13 @@ function AuthPage() {
           },
         });
         if (error) throw error;
-        setNotice("Check your email to confirm your account, then sign in.");
+        if (data.session) {
+          navigate({ to: "/dashboard" });
+        } else {
+          setNotice("Check your email to confirm your account, then sign in.");
+        }
       } else {
+
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         navigate({ to: "/dashboard" });
