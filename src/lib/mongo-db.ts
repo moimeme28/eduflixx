@@ -59,7 +59,7 @@ function projectionFrom(select: string | undefined): Row | undefined {
   return projection;
 }
 
-class Query implements PromiseLike<Result<any>> {
+class Query implements PromiseLike<Result<Row[]>> {
   private filter: Filter = {};
   private selectCols: string | undefined;
   private sort: Row | undefined;
@@ -136,17 +136,17 @@ class Query implements PromiseLike<Result<any>> {
     return this;
   }
 
-  single() {
+  single(): PromiseLike<Result<Row>> {
     this.singleMode = "single";
-    return this;
+    return this as unknown as PromiseLike<Result<Row>>;
   }
 
-  maybeSingle() {
+  maybeSingle(): PromiseLike<Result<Row | null>> {
     this.singleMode = "maybe";
-    return this;
+    return this as unknown as PromiseLike<Result<Row | null>>;
   }
 
-  private async run(): Promise<Result<any>> {
+  private async run(): Promise<Result<Row[]>> {
     switch (this.mode) {
       case "insert": {
         const docs = this.payload.map((d) => ({
@@ -196,21 +196,21 @@ class Query implements PromiseLike<Result<any>> {
     }
   }
 
-  private shape(rows: Row[]): any {
+  private shape(rows: Row[]): Row[] {
     if (this.singleMode === "none") return rows;
-    return rows[0] ?? null;
+    return (rows[0] ?? null) as unknown as Row[];
   }
 
-  then<TResult1 = Result<any>, TResult2 = never>(
-    onfulfilled?: ((value: Result<any>) => TResult1 | PromiseLike<TResult1>) | null,
+  then<TResult1 = Result<Row[]>, TResult2 = never>(
+    onfulfilled?: ((value: Result<Row[]>) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
   ): PromiseLike<TResult1 | TResult2> {
     return this.run()
       .then((value) => value)
       .catch((err: unknown) => {
         const message = err instanceof Error ? err.message : String(err);
-        if (this.singleMode !== "none") return { data: null, error: { message } };
-        return { data: [], error: { message } };
+        const data = (this.singleMode !== "none" ? null : []) as unknown as Row[];
+        return { data, error: { message } };
       })
       .then(onfulfilled as never, onrejected as never);
   }
@@ -218,7 +218,7 @@ class Query implements PromiseLike<Result<any>> {
 
 export interface MongoDb {
   from(collection: string): Query;
-  rpc(name: string, args?: Row): Promise<Result<any>>;
+  rpc(name: string, args?: Row): Promise<Result<unknown>>;
   count(collection: string, filter?: Filter): Promise<number>;
 }
 
