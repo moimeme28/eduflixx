@@ -38,7 +38,7 @@ export const createThread = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<ThreadSummary> => {
     const { data, error } = await context.db
       .from("assistant_threads")
-      .insert({ user_id: context.userId })
+      .insert({ user_id: context.userId, title: "New conversation" })
       .select("id, title, updated_at")
       .single();
     if (error) throw new Error(error.message);
@@ -49,6 +49,11 @@ export const deleteThread = createServerFn({ method: "POST" })
   .middleware([requireAuthDb])
   .inputValidator((input: { id: string }) => input)
   .handler(async ({ data, context }) => {
+    await context.db
+      .from("assistant_messages")
+      .delete()
+      .eq("thread_id", data.id)
+      .eq("user_id", context.userId);
     const { error } = await context.db
       .from("assistant_threads")
       .delete()

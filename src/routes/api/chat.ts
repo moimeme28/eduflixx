@@ -9,6 +9,7 @@ import {
   type UIMessage,
 } from "ai";
 import { createClient } from "@supabase/supabase-js";
+import { createMongoDb } from "@/lib/mongo-db";
 import { z } from "zod";
 
 const SYSTEM_PROMPT = `You are EduFlix's AI learning assistant. Students tell you what they want to learn, and you recommend educational movies, documentaries, and series that teach it.
@@ -66,11 +67,13 @@ export const Route = createFileRoute("/api/chat")({
         const auth = await getUserFromRequest(request);
         if (!auth) return new Response("Unauthorized", { status: 401 });
 
+        const db = createMongoDb();
+
         // Persist the incoming user message + set the thread title if needed.
         if (threadId) {
           const lastUser = [...messages].reverse().find((m) => m.role === "user");
           if (lastUser) {
-            await auth.supabase.from("assistant_messages").insert({
+            await db.from("assistant_messages").insert({
               thread_id: threadId,
               user_id: auth.userId,
               role: "user",
@@ -78,7 +81,7 @@ export const Route = createFileRoute("/api/chat")({
             });
             const title = messageText(lastUser).slice(0, 60);
             if (title) {
-              await auth.supabase
+              await db
                 .from("assistant_threads")
                 .update({ title })
                 .eq("id", threadId)
@@ -119,13 +122,13 @@ export const Route = createFileRoute("/api/chat")({
           originalMessages: messages,
           onFinish: async ({ responseMessage }) => {
             if (threadId && responseMessage) {
-              await auth.supabase.from("assistant_messages").insert({
+              await db.from("assistant_messages").insert({
                 thread_id: threadId,
                 user_id: auth.userId,
                 role: "assistant",
                 parts: responseMessage.parts,
               });
-              await auth.supabase
+              await db
                 .from("assistant_threads")
                 .update({ updated_at: new Date().toISOString() })
                 .eq("id", threadId)

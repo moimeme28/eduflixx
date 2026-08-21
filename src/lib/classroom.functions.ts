@@ -188,6 +188,18 @@ export const deleteClass = createServerFn({ method: "POST" })
   .middleware([requireAuthDb])
   .inputValidator((input: { classId: string }) => input)
   .handler(async ({ data, context }) => {
+    // Mongo has no cascading deletes, so dependent documents are removed here.
+    const { data: assignments } = await context.db
+      .from("assignments")
+      .select("id")
+      .eq("class_id", data.classId);
+    const assignmentIds = (assignments ?? []).map((a) => a.id as string);
+    if (assignmentIds.length > 0) {
+      await context.db.from("assignment_progress").delete().in("assignment_id", assignmentIds);
+    }
+    await context.db.from("assignments").delete().eq("class_id", data.classId);
+    await context.db.from("class_members").delete().eq("class_id", data.classId);
+    await context.db.from("class_invites").delete().eq("class_id", data.classId);
     const { error } = await context.db.from("classes").delete().eq("id", data.classId);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -427,6 +439,7 @@ export const deleteAssignment = createServerFn({ method: "POST" })
   .middleware([requireAuthDb])
   .inputValidator((input: { id: string }) => input)
   .handler(async ({ data, context }) => {
+    await context.db.from("assignment_progress").delete().eq("assignment_id", data.id);
     const { error } = await context.db.from("assignments").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
