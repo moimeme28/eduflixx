@@ -54,6 +54,17 @@ export interface AssignmentRow {
 export const getMyRole = createServerFn({ method: "GET" })
   .middleware([requireAuthDb])
   .handler(async ({ context }): Promise<{ role: Role }> => {
+    // Mongo has no signup trigger, so the profile row is ensured on first read.
+    const email = (context.claims?.email as string | undefined) ?? null;
+    await context.db.from("profiles").upsert(
+      {
+        id: context.userId,
+        display_name: email ? email.split("@")[0] : null,
+        email,
+      },
+      { onConflict: "id" },
+    );
+
     const { data } = await context.db
       .from("user_roles")
       .select("role")
