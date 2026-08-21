@@ -100,12 +100,18 @@ export const getAdminOverview = createServerFn({ method: "GET" })
     };
   });
 
+// First user to claim the console becomes admin; afterwards only an existing
+// admin can change roles.
 export const claimAdmin = createServerFn({ method: "POST" })
   .middleware([requireAuthDb])
   .handler(async ({ context }): Promise<{ ok: boolean }> => {
-    const { data, error } = await context.db.rpc("claim_admin");
+    const admins = await context.db.count("user_roles", { role: "admin" });
+    if (admins > 0) return { ok: false };
+    const { error } = await context.db
+      .from("user_roles")
+      .upsert({ user_id: context.userId, role: "admin" }, { onConflict: "user_id,role" });
     if (error) throw new Error(error.message);
-    return { ok: Boolean(data) };
+    return { ok: true };
   });
 
 export const setUserRole = createServerFn({ method: "POST" })
@@ -120,11 +126,19 @@ export const setUserRole = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ context, data }): Promise<{ ok: boolean }> => {
-    const { error } = await context.db.rpc("admin_set_role", {
-      _user_id: data.userId,
-      _role: data.role,
-      _grant: data.grant,
-    });
+    const callerIsAdmin =
+      (await context.db.count("user_roles", { user_id: context.userId, role: "admin" })) > 0;
+    if (!callerIsAdmin) throw new Error("Forbidden");
+
+    const { error } = data.grant
+      ? await context.db
+          .from("user_roles")
+          .upsert({ user_id: data.userId, role: data.role }, { onConflict: "user_id,role" })
+      : await context.db
+          .from("user_roles")
+          .delete()
+          .eq("user_id", data.userId)
+          .eq("role", data.role);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
