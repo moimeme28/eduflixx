@@ -1,4 +1,4 @@
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuthDb } from "@/lib/db-middleware";
 import { aggregateClassTotals } from "@/lib/classroom-progress";
 import { createServerFn } from "@tanstack/react-start";
 
@@ -52,9 +52,9 @@ export interface AssignmentRow {
 
 // --- role ---
 export const getMyRole = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .handler(async ({ context }): Promise<{ role: Role }> => {
-    const { data } = await context.supabase
+    const { data } = await context.db
       .from("user_roles")
       .select("role")
       .eq("user_id", context.userId);
@@ -66,15 +66,15 @@ export const getMyRole = createServerFn({ method: "GET" })
 
 // --- classes ---
 export const listMyClasses = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .handler(async ({ context }): Promise<{ teaching: ClassRow[]; enrolled: ClassRow[] }> => {
     const [teachRes, memRes] = await Promise.all([
-      context.supabase
+      context.db
         .from("classes")
         .select("id, name, description, subject, teacher_id, created_at")
         .eq("teacher_id", context.userId)
         .order("created_at", { ascending: false }),
-      context.supabase
+      context.db
         .from("class_members")
         .select("class_id, classes:class_id(id, name, description, subject, teacher_id, created_at)")
         .eq("student_id", context.userId),
@@ -96,8 +96,8 @@ export const listMyClasses = createServerFn({ method: "GET" })
     if (teaching.length > 0) {
       const classIds = teaching.map((c) => c.id);
       const [membersResult, assignmentsResult] = await Promise.all([
-        context.supabase.from("class_members").select("class_id").in("class_id", classIds),
-        context.supabase.from("assignments").select("id, class_id").in("class_id", classIds),
+        context.db.from("class_members").select("class_id").in("class_id", classIds),
+        context.db.from("assignments").select("id, class_id").in("class_id", classIds),
       ]);
       if (membersResult.error) throw new Error(membersResult.error.message);
       if (assignmentsResult.error) throw new Error(assignmentsResult.error.message);
@@ -105,7 +105,7 @@ export const listMyClasses = createServerFn({ method: "GET" })
       const assignments = assignmentsResult.data ?? [];
       let progress: { assignment_id: string; student_id: string; status: string }[] = [];
       if (assignments.length > 0) {
-        const progressResult = await context.supabase
+        const progressResult = await context.db
           .from("assignment_progress")
           .select("assignment_id, student_id, status")
           .in("assignment_id", assignments.map((a) => a.id))
@@ -149,20 +149,20 @@ export const listMyClasses = createServerFn({ method: "GET" })
   });
 
 export const createClass = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .inputValidator((input: { name: string; description?: string; subject?: string }) => input)
   .handler(async ({ data, context }): Promise<{ id: string }> => {
     // Ensure teacher role
-    const { data: roles } = await context.supabase
+    const { data: roles } = await context.db
       .from("user_roles")
       .select("role")
       .eq("user_id", context.userId)
       .eq("role", "teacher");
     if (!roles || roles.length === 0) {
       // grant teacher role automatically for first class creation
-      await context.supabase.from("user_roles").insert({ user_id: context.userId, role: "teacher" });
+      await context.db.from("user_roles").insert({ user_id: context.userId, role: "teacher" });
     }
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await context.db
       .from("classes")
       .insert({
         teacher_id: context.userId,
@@ -177,19 +177,19 @@ export const createClass = createServerFn({ method: "POST" })
   });
 
 export const deleteClass = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .inputValidator((input: { classId: string }) => input)
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("classes").delete().eq("id", data.classId);
+    const { error } = await context.db.from("classes").delete().eq("id", data.classId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const getClassDetail = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .inputValidator((input: { classId: string }) => input)
   .handler(async ({ data, context }) => {
-    const { data: cls, error } = await context.supabase
+    const { data: cls, error } = await context.db
       .from("classes")
       .select("id, name, description, subject, teacher_id, created_at")
       .eq("id", data.classId)
@@ -199,23 +199,23 @@ export const getClassDetail = createServerFn({ method: "GET" })
     const isTeacher = cls.teacher_id === context.userId;
 
     const [membersRes, invitesRes, assignmentsRes, progressRes] = await Promise.all([
-      context.supabase
+      context.db
         .from("class_members")
         .select("id, student_id, joined_at")
         .eq("class_id", data.classId),
       isTeacher
-        ? context.supabase
+        ? context.db
             .from("class_invites")
             .select("id, email, status, created_at")
             .eq("class_id", data.classId)
             .order("created_at", { ascending: false })
         : Promise.resolve({ data: [], error: null }),
-      context.supabase
+      context.db
         .from("assignments")
         .select("id, class_id, tmdb_id, media_type, title, poster, subject, note, scene_start, scene_end, episode_info, due_date, created_at")
         .eq("class_id", data.classId)
         .order("created_at", { ascending: false }),
-      context.supabase
+      context.db
         .from("assignment_progress")
         .select("assignment_id, status, student_id")
         .eq("student_id", context.userId),
@@ -230,7 +230,7 @@ export const getClassDetail = createServerFn({ method: "GET" })
     const memberRows = membersRes.data ?? [];
     const nameMap = new Map<string, string | null>();
     if (memberRows.length > 0) {
-      const { data: profs } = await context.supabase
+      const { data: profs } = await context.db
         .from("profiles")
         .select("id, display_name")
         .in("id", memberRows.map((m) => m.student_id));
@@ -265,7 +265,7 @@ export const getClassDetail = createServerFn({ method: "GET" })
     // Teacher-only: full progress matrix across every student in the class.
     const progressMatrix: Record<string, Record<string, string>> = {};
     if (isTeacher && assignments.length > 0) {
-      const { data: allProg, error: allProgError } = await context.supabase
+      const { data: allProg, error: allProgError } = await context.db
         .from("assignment_progress")
         .select("assignment_id, student_id, status")
         .in("assignment_id", assignments.map((a) => a.id));
@@ -301,12 +301,12 @@ export const getClassDetail = createServerFn({ method: "GET" })
 
 // --- invites ---
 export const inviteStudent = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .inputValidator((input: { classId: string; email: string }) => input)
   .handler(async ({ data, context }) => {
     const email = data.email.trim().toLowerCase();
     if (!email.includes("@")) throw new Error("Invalid email");
-    const { error } = await context.supabase.from("class_invites").upsert(
+    const { error } = await context.db.from("class_invites").upsert(
       {
         class_id: data.classId,
         email,
@@ -320,32 +320,32 @@ export const inviteStudent = createServerFn({ method: "POST" })
   });
 
 export const revokeInvite = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .inputValidator((input: { inviteId: string }) => input)
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("class_invites").delete().eq("id", data.inviteId);
+    const { error } = await context.db.from("class_invites").delete().eq("id", data.inviteId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const removeMember = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .inputValidator((input: { memberId: string }) => input)
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("class_members").delete().eq("id", data.memberId);
+    const { error } = await context.db.from("class_members").delete().eq("id", data.memberId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 // Auto-accept any pending invites addressed to the current user's email.
 export const acceptMyInvites = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .handler(async ({ context }): Promise<{ joined: number }> => {
     const email = (context.claims?.email as string | undefined)?.toLowerCase();
     if (!email) return { joined: 0 };
     // IMPORTANT: teachers can read every invite of their own classes via RLS,
     // so we must scope strictly to invites addressed to this user's email.
-    const { data: invites } = await context.supabase
+    const { data: invites } = await context.db
       .from("class_invites")
       .select("id, class_id, email")
       .eq("status", "pending")
@@ -353,7 +353,7 @@ export const acceptMyInvites = createServerFn({ method: "POST" })
     if (!invites || invites.length === 0) return { joined: 0 };
 
     // Never enroll a teacher into a class they own.
-    const { data: ownClasses } = await context.supabase
+    const { data: ownClasses } = await context.db
       .from("classes")
       .select("id")
       .eq("teacher_id", context.userId);
@@ -363,14 +363,14 @@ export const acceptMyInvites = createServerFn({ method: "POST" })
     for (const inv of invites) {
       if ((inv.email ?? "").toLowerCase() !== email) continue;
       if (ownIds.has(inv.class_id)) continue;
-      const { error: memErr } = await context.supabase
+      const { error: memErr } = await context.db
         .from("class_members")
         .upsert(
           { class_id: inv.class_id, student_id: context.userId, status: "active" },
           { onConflict: "class_id,student_id" },
         );
       if (!memErr) {
-        await context.supabase.from("class_invites").update({ status: "accepted" }).eq("id", inv.id);
+        await context.db.from("class_invites").update({ status: "accepted" }).eq("id", inv.id);
         joined++;
       }
     }
@@ -380,7 +380,7 @@ export const acceptMyInvites = createServerFn({ method: "POST" })
 
 // --- assignments ---
 export const createAssignment = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .inputValidator(
     (input: {
       classId: string;
@@ -397,7 +397,7 @@ export const createAssignment = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("assignments").insert({
+    const { error } = await context.db.from("assignments").insert({
       class_id: data.classId,
       teacher_id: context.userId,
       tmdb_id: data.tmdbId,
@@ -416,19 +416,19 @@ export const createAssignment = createServerFn({ method: "POST" })
   });
 
 export const deleteAssignment = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .inputValidator((input: { id: string }) => input)
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("assignments").delete().eq("id", data.id);
+    const { error } = await context.db.from("assignments").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const setAssignmentProgress = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .inputValidator((input: { assignmentId: string; status: string; notes?: string }) => input)
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("assignment_progress").upsert(
+    const { error } = await context.db.from("assignment_progress").upsert(
       {
         assignment_id: data.assignmentId,
         student_id: context.userId,
@@ -443,25 +443,25 @@ export const setAssignmentProgress = createServerFn({ method: "POST" })
 
 // All assignments across classes the student belongs to.
 export const listMyAssignments = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .handler(async ({ context }): Promise<AssignmentRow[]> => {
-    const { data: memberships } = await context.supabase
+    const { data: memberships } = await context.db
       .from("class_members")
       .select("class_id")
       .eq("student_id", context.userId);
     const classIds = (memberships ?? []).map((m) => m.class_id);
     if (classIds.length === 0) return [];
     const [aRes, pRes, cRes] = await Promise.all([
-      context.supabase
+      context.db
         .from("assignments")
         .select("id, class_id, tmdb_id, media_type, title, poster, subject, note, scene_start, scene_end, episode_info, due_date, created_at")
         .in("class_id", classIds)
         .order("created_at", { ascending: false }),
-      context.supabase
+      context.db
         .from("assignment_progress")
         .select("assignment_id, status")
         .eq("student_id", context.userId),
-      context.supabase.from("classes").select("id, name").in("id", classIds),
+      context.db.from("classes").select("id, name").in("id", classIds),
     ]);
     const progMap = new Map<string, string>();
     for (const p of pRes.data ?? []) progMap.set(p.assignment_id, p.status);
