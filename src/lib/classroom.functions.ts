@@ -74,10 +74,7 @@ export const listMyClasses = createServerFn({ method: "GET" })
         .select("id, name, description, subject, teacher_id, created_at")
         .eq("teacher_id", context.userId)
         .order("created_at", { ascending: false }),
-      context.db
-        .from("class_members")
-        .select("class_id, classes:class_id(id, name, description, subject, teacher_id, created_at)")
-        .eq("student_id", context.userId),
+      context.db.from("class_members").select("class_id").eq("student_id", context.userId),
     ]);
     if (teachRes.error) throw new Error(teachRes.error.message);
     if (memRes.error) throw new Error(memRes.error.message);
