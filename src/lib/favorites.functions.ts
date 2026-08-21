@@ -1,4 +1,4 @@
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuthDb } from "@/lib/db-middleware";
 import { createServerFn } from "@tanstack/react-start";
 
 export interface FavoriteItem {
@@ -14,9 +14,9 @@ export interface FavoriteItem {
 }
 
 export const listFavorites = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .handler(async ({ context }): Promise<FavoriteItem[]> => {
-    const { data, error } = await context.supabase
+    const { data, error } = await context.db
       .from("favorites")
       .select("id, tmdb_id, media_type, title, poster, year, rating, note, created_at")
       .eq("user_id", context.userId)
@@ -36,7 +36,7 @@ export const listFavorites = createServerFn({ method: "GET" })
   });
 
 export const addFavorite = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .inputValidator(
     (input: {
       tmdbId: number;
@@ -48,7 +48,7 @@ export const addFavorite = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("favorites").upsert(
+    const { error } = await context.db.from("favorites").upsert(
       {
         user_id: context.userId,
         tmdb_id: data.tmdbId,
@@ -65,10 +65,10 @@ export const addFavorite = createServerFn({ method: "POST" })
   });
 
 export const removeFavorite = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .inputValidator((input: { tmdbId: number; mediaType: "movie" | "tv" }) => input)
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
+    const { error } = await context.db
       .from("favorites")
       .delete()
       .eq("user_id", context.userId)
@@ -79,10 +79,10 @@ export const removeFavorite = createServerFn({ method: "POST" })
   });
 
 export const updateFavoriteNote = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .inputValidator((input: { id: string; note: string }) => input)
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
+    const { error } = await context.db
       .from("favorites")
       .update({ note: data.note })
       .eq("id", data.id)

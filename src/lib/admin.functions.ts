@@ -1,4 +1,4 @@
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuthDb } from "@/lib/db-middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
@@ -31,15 +31,15 @@ export interface AdminOverview {
 }
 
 export const getAdminOverview = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .handler(async ({ context }): Promise<AdminOverview> => {
-    const { data: myRoles } = await context.supabase
+    const { data: myRoles } = await context.db
       .from("user_roles")
       .select("role")
       .eq("user_id", context.userId);
     const isAdmin = (myRoles ?? []).some((r) => r.role === "admin");
 
-    const { data: exists } = await context.supabase.rpc("admin_exists");
+    const { data: exists } = await context.db.rpc("admin_exists");
     const adminExists = Boolean(exists);
 
     const empty: AdminOverview = {
@@ -52,11 +52,11 @@ export const getAdminOverview = createServerFn({ method: "GET" })
     if (!isAdmin) return empty;
 
     const [profRes, rolesRes, classRes, assignRes, memberRes] = await Promise.all([
-      context.supabase.from("profiles").select("id, display_name, created_at").order("created_at", { ascending: false }),
-      context.supabase.from("user_roles").select("user_id, role"),
-      context.supabase.from("classes").select("id, name, subject, teacher_id, created_at").order("created_at", { ascending: false }),
-      context.supabase.from("assignments").select("id, class_id"),
-      context.supabase.from("class_members").select("id, class_id"),
+      context.db.from("profiles").select("id, display_name, created_at").order("created_at", { ascending: false }),
+      context.db.from("user_roles").select("user_id, role"),
+      context.db.from("classes").select("id, name, subject, teacher_id, created_at").order("created_at", { ascending: false }),
+      context.db.from("assignments").select("id, class_id"),
+      context.db.from("class_members").select("id, class_id"),
     ]);
 
     const roleMap = new Map<string, AppRole[]>();
@@ -100,16 +100,22 @@ export const getAdminOverview = createServerFn({ method: "GET" })
     };
   });
 
+// First user to claim the console becomes admin; afterwards only an existing
+// admin can change roles.
 export const claimAdmin = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .handler(async ({ context }): Promise<{ ok: boolean }> => {
-    const { data, error } = await context.supabase.rpc("claim_admin");
+    const admins = await context.db.count("user_roles", { role: "admin" });
+    if (admins > 0) return { ok: false };
+    const { error } = await context.db
+      .from("user_roles")
+      .upsert({ user_id: context.userId, role: "admin" }, { onConflict: "user_id,role" });
     if (error) throw new Error(error.message);
-    return { ok: Boolean(data) };
+    return { ok: true };
   });
 
 export const setUserRole = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -120,11 +126,19 @@ export const setUserRole = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ context, data }): Promise<{ ok: boolean }> => {
-    const { error } = await context.supabase.rpc("admin_set_role", {
-      _user_id: data.userId,
-      _role: data.role,
-      _grant: data.grant,
-    });
+    const callerIsAdmin =
+      (await context.db.count("user_roles", { user_id: context.userId, role: "admin" })) > 0;
+    if (!callerIsAdmin) throw new Error("Forbidden");
+
+    const { error } = data.grant
+      ? await context.db
+          .from("user_roles")
+          .upsert({ user_id: data.userId, role: data.role }, { onConflict: "user_id,role" })
+      : await context.db
+          .from("user_roles")
+          .delete()
+          .eq("user_id", data.userId)
+          .eq("role", data.role);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

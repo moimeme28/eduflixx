@@ -1,4 +1,4 @@
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuthDb } from "@/lib/db-middleware";
 import { createServerFn } from "@tanstack/react-start";
 
 type JsonValue =
@@ -22,9 +22,9 @@ export interface ThreadSummary {
 }
 
 export const listThreads = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .handler(async ({ context }): Promise<ThreadSummary[]> => {
-    const { data, error } = await context.supabase
+    const { data, error } = await context.db
       .from("assistant_threads")
       .select("id, title, updated_at")
       .eq("user_id", context.userId)
@@ -34,11 +34,11 @@ export const listThreads = createServerFn({ method: "GET" })
   });
 
 export const createThread = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .handler(async ({ context }): Promise<ThreadSummary> => {
-    const { data, error } = await context.supabase
+    const { data, error } = await context.db
       .from("assistant_threads")
-      .insert({ user_id: context.userId })
+      .insert({ user_id: context.userId, title: "New conversation" })
       .select("id, title, updated_at")
       .single();
     if (error) throw new Error(error.message);
@@ -46,10 +46,15 @@ export const createThread = createServerFn({ method: "POST" })
   });
 
 export const deleteThread = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .inputValidator((input: { id: string }) => input)
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
+    await context.db
+      .from("assistant_messages")
+      .delete()
+      .eq("thread_id", data.id)
+      .eq("user_id", context.userId);
+    const { error } = await context.db
       .from("assistant_threads")
       .delete()
       .eq("id", data.id)
@@ -59,11 +64,11 @@ export const deleteThread = createServerFn({ method: "POST" })
   });
 
 export const getThreadMessages = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuthDb])
   .inputValidator((input: { threadId: string }) => input)
   .handler(async ({ data, context }): Promise<PersistedMessage[]> => {
     // Verify ownership of the thread first.
-    const { data: thread } = await context.supabase
+    const { data: thread } = await context.db
       .from("assistant_threads")
       .select("id")
       .eq("id", data.threadId)
@@ -71,7 +76,7 @@ export const getThreadMessages = createServerFn({ method: "GET" })
       .maybeSingle();
     if (!thread) return [];
 
-    const { data: rows, error } = await context.supabase
+    const { data: rows, error } = await context.db
       .from("assistant_messages")
       .select("id, role, parts, created_at")
       .eq("thread_id", data.threadId)
