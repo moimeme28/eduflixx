@@ -91,7 +91,7 @@ export const listMyClasses = createServerFn({ method: "GET" })
       expectedCompletionCount: 0,
     }));
     if (teaching.length > 0) {
-      const classIds = teaching.map((c) => c.id);
+      const classIds: string[] = teaching.map((c) => c.id);
       const [membersResult, assignmentsResult] = await Promise.all([
         context.db.from("class_members").select("class_id").in("class_id", classIds),
         context.db.from("assignments").select("id, class_id").in("class_id", classIds),
@@ -108,13 +108,13 @@ export const listMyClasses = createServerFn({ method: "GET" })
           .in("assignment_id", assignments.map((a) => a.id))
           .eq("status", "completed");
         if (progressResult.error) throw new Error(progressResult.error.message);
-        progress = progressResult.data ?? [];
+        progress = (progressResult.data ?? []) as typeof progress;
       }
 
       const totals = aggregateClassTotals({
         classIds,
-        members: membersResult.data ?? [],
-        assignments,
+        members: (membersResult.data ?? []) as { class_id: string }[],
+        assignments: assignments as { id: string; class_id: string }[],
         progress,
       });
 
@@ -272,7 +272,7 @@ export const getClassDetail = createServerFn({ method: "GET" })
       }
     }
 
-    const invites: InviteRow[] = (invitesRes.data ?? []).map((i: { id: string; email: string; status: string; created_at: string }) => ({
+    const invites: InviteRow[] = ((invitesRes.data ?? []) as { id: string; email: string; status: string; created_at: string }[]).map((i) => ({
       id: i.id,
       email: i.email,
       status: i.status,
