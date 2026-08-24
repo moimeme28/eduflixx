@@ -37,7 +37,18 @@ async function call(collection: string, op: string, body: Row): Promise<any> {
     body: JSON.stringify(body),
   });
   const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json?.error || `Mongo API ${op} failed (${res.status})`);
+  if (!res.ok) {
+    const gatewayMessage = typeof json?.error === "string" ? json.error : "";
+    if (/bad auth|authentication failed/i.test(gatewayMessage)) {
+      throw new Error(
+        "The database gateway cannot authenticate to MongoDB. Update MONGODB_URI on the gateway service and redeploy it.",
+      );
+    }
+    if (res.status === 503) {
+      throw new Error("The database is temporarily unavailable. Please try again shortly.");
+    }
+    throw new Error(gatewayMessage || `Mongo API ${op} failed (${res.status})`);
+  }
   return json;
 }
 
@@ -53,7 +64,7 @@ function projectionFrom(select: string | undefined): Row | undefined {
   if (!select || select.trim() === "*" || select.includes("(")) return undefined;
   const projection: Row = { _id: 0 };
   for (const raw of select.split(",")) {
-    const col = raw.trim().split(":").pop()!.trim();
+    const col = raw.trim().split(":").pop()?.trim();
     if (col) projection[col] = 1;
   }
   return projection;
