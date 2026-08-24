@@ -9,6 +9,10 @@ import {
   type FavoriteItem,
 } from "@/lib/favorites.functions";
 
+function messageFrom(error: unknown): string {
+  return error instanceof Error ? error.message : "The watchlist service is unavailable.";
+}
+
 export interface FavoriteInput {
   tmdbId: number;
   mediaType: "movie" | "tv";
@@ -25,11 +29,18 @@ export function useFavorites() {
   const addFn = useServerFn(addFavorite);
   const removeFn = useServerFn(removeFavorite);
 
-  const { data: favorites = [], isLoading } = useQuery({
+  const { data: favoritesResult, isLoading } = useQuery({
     queryKey: ["favorites"],
-    queryFn: () => fetchFavorites(),
+    queryFn: async () => {
+      try {
+        return { favorites: await fetchFavorites(), error: null };
+      } catch (error) {
+        return { favorites: [] as FavoriteItem[], error: messageFrom(error) };
+      }
+    },
     enabled: !!user,
   });
+  const favorites = favoritesResult?.favorites ?? [];
 
   const keys = useMemo(
     () => new Set(favorites.map((f) => `${f.mediaType}-${f.tmdbId}`)),
@@ -41,18 +52,21 @@ export function useFavorites() {
   const addMut = useMutation({
     mutationFn: (item: FavoriteInput) => addFn({ data: item }),
     onSuccess: invalidate,
+    onError: (error) => console.error("Could not save favorite:", messageFrom(error)),
   });
 
   const removeMut = useMutation({
     mutationFn: (item: { tmdbId: number; mediaType: "movie" | "tv" }) =>
       removeFn({ data: item }),
     onSuccess: invalidate,
+    onError: (error) => console.error("Could not remove favorite:", messageFrom(error)),
   });
 
   return {
     user,
     favorites: favorites as FavoriteItem[],
     isLoading,
+    error: favoritesResult?.error ?? null,
     isFavorite: (mediaType: "movie" | "tv", tmdbId: number) =>
       keys.has(`${mediaType}-${tmdbId}`),
     add: addMut.mutate,

@@ -61,7 +61,16 @@ const ready = client.connect().then(async () => {
 const app = express();
 app.use(express.json({ limit: "2mb" }));
 
-app.get("/health", (_req, res) => res.json({ ok: true }));
+app.get("/health", async (_req, res) => {
+  try {
+    const db = await ready;
+    await db.command({ ping: 1 });
+    res.json({ ok: true, database: "connected" });
+  } catch (err) {
+    console.error("[mongo-api] health check failed", err);
+    res.status(503).json({ ok: false, database: "unavailable" });
+  }
+});
 
 app.use("/v1", (req, res, next) => {
   const key = req.header("x-api-key");
@@ -81,7 +90,12 @@ const handler = (fn) => async (req, res) => {
     res.json(await fn(col, req.body || {}));
   } catch (err) {
     console.error("[mongo-api]", err);
-    res.status(400).json({ error: String(err?.message || err) });
+    const message = String(err?.message || err);
+    const databaseUnavailable =
+      /authentication failed|bad auth|server selection|timed out|ECONNREFUSED/i.test(message);
+    res.status(databaseUnavailable ? 503 : 400).json({
+      error: databaseUnavailable ? "database unavailable" : message,
+    });
   }
 };
 
