@@ -37,33 +37,46 @@ const ALLOWED_COLLECTIONS = new Set([
 ]);
 
 const client = new MongoClient(URI, { maxPoolSize: 10 });
-const ready = client.connect().then(async () => {
-  const db = client.db(DB_NAME);
-  await Promise.all([
-    db.collection("profiles").createIndex({ id: 1 }, { unique: true }),
-    db.collection("user_roles").createIndex({ user_id: 1, role: 1 }, { unique: true }),
-    db.collection("classes").createIndex({ id: 1 }, { unique: true }),
-    db.collection("classes").createIndex({ teacher_id: 1 }),
-    db.collection("class_members").createIndex({ class_id: 1, student_id: 1 }, { unique: true }),
-    db.collection("class_invites").createIndex({ class_id: 1, email: 1 }, { unique: true }),
-    db.collection("assignments").createIndex({ class_id: 1 }),
-    db
-      .collection("assignment_progress")
-      .createIndex({ assignment_id: 1, student_id: 1 }, { unique: true }),
-    db.collection("favorites").createIndex({ user_id: 1, media_type: 1, tmdb_id: 1 }, { unique: true }),
-    db.collection("assistant_threads").createIndex({ user_id: 1 }),
-    db.collection("assistant_messages").createIndex({ thread_id: 1 }),
-  ]);
-  console.log(`[mongo-api] connected to ${DB_NAME}`);
-  return db;
-});
+let connection;
+
+async function database() {
+  if (!connection) {
+    connection = client
+      .connect()
+      .then(async () => {
+        const db = client.db(DB_NAME);
+        await Promise.all([
+          db.collection("profiles").createIndex({ id: 1 }, { unique: true }),
+          db.collection("user_roles").createIndex({ user_id: 1, role: 1 }, { unique: true }),
+          db.collection("classes").createIndex({ id: 1 }, { unique: true }),
+          db.collection("classes").createIndex({ teacher_id: 1 }),
+          db.collection("class_members").createIndex({ class_id: 1, student_id: 1 }, { unique: true }),
+          db.collection("class_invites").createIndex({ class_id: 1, email: 1 }, { unique: true }),
+          db.collection("assignments").createIndex({ class_id: 1 }),
+          db
+            .collection("assignment_progress")
+            .createIndex({ assignment_id: 1, student_id: 1 }, { unique: true }),
+          db.collection("favorites").createIndex({ user_id: 1, media_type: 1, tmdb_id: 1 }, { unique: true }),
+          db.collection("assistant_threads").createIndex({ user_id: 1 }),
+          db.collection("assistant_messages").createIndex({ thread_id: 1 }),
+        ]);
+        console.log(`[mongo-api] connected to ${DB_NAME}`);
+        return db;
+      })
+      .catch((error) => {
+        connection = undefined;
+        throw error;
+      });
+  }
+  return connection;
+}
 
 const app = express();
 app.use(express.json({ limit: "2mb" }));
 
 app.get("/health", async (_req, res) => {
   try {
-    const db = await ready;
+    const db = await database();
     await db.command({ ping: 1 });
     res.json({ ok: true, database: "connected" });
   } catch (err) {
@@ -85,7 +98,7 @@ function collectionOf(db, name) {
 
 const handler = (fn) => async (req, res) => {
   try {
-    const db = await ready;
+    const db = await database();
     const col = collectionOf(db, req.params.collection);
     res.json(await fn(col, req.body || {}));
   } catch (err) {
