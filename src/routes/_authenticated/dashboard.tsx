@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 function Dashboard() {
-  const { favorites, isLoading, remove } = useFavorites();
+  const { favorites, isLoading, error, remove } = useFavorites();
 
   const movies = favorites.filter((f) => f.mediaType === "movie");
   const series = favorites.filter((f) => f.mediaType === "tv");
@@ -38,7 +38,14 @@ function Dashboard() {
         </div>
       </div>
 
-      {isLoading ? (
+      {error ? (
+        <div className="mt-10 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm">
+          <p className="font-medium text-destructive">Your watchlist is temporarily unavailable.</p>
+          <p className="mt-1 text-muted-foreground">
+            The database connection needs attention. Your saved titles have not been changed.
+          </p>
+        </div>
+      ) : isLoading ? (
         <p className="mt-16 text-center text-sm text-muted-foreground">Loading your watchlist…</p>
       ) : favorites.length === 0 ? (
         <div className="mt-16 flex flex-col items-center gap-4 text-center">
