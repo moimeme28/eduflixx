@@ -24,6 +24,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedClassroomIndexRouteImport } from './routes/_authenticated/classroom.index'
 import { Route as AuthenticatedAssistantIndexRouteImport } from './routes/_authenticated/assistant.index'
 import { Route as TitleTypeIdRouteImport } from './routes/title.$type.$id'
+import { Route as ApiPublicMongoDiagRouteImport } from './routes/api/public/mongo-diag'
 import { Route as AuthenticatedClassroomClassIdRouteImport } from './routes/_authenticated/classroom.$classId'
 import { Route as AuthenticatedAssistantThreadIdRouteImport } from './routes/_authenticated/assistant.$threadId'
 
@@ -103,6 +104,11 @@ const TitleTypeIdRoute = TitleTypeIdRouteImport.update({
   path: '/title/$type/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMongoDiagRoute = ApiPublicMongoDiagRouteImport.update({
+  id: '/api/public/mongo-diag',
+  path: '/api/public/mongo-diag',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedClassroomClassIdRoute =
   AuthenticatedClassroomClassIdRouteImport.update({
     id: '/$classId',
@@ -130,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/subject/$slug': typeof SubjectSlugRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/classroom/$classId': typeof AuthenticatedClassroomClassIdRoute
+  '/api/public/mongo-diag': typeof ApiPublicMongoDiagRoute
   '/title/$type/$id': typeof TitleTypeIdRoute
   '/assistant/': typeof AuthenticatedAssistantIndexRoute
   '/classroom/': typeof AuthenticatedClassroomIndexRoute
@@ -146,6 +153,7 @@ export interface FileRoutesByTo {
   '/subject/$slug': typeof SubjectSlugRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/classroom/$classId': typeof AuthenticatedClassroomClassIdRoute
+  '/api/public/mongo-diag': typeof ApiPublicMongoDiagRoute
   '/title/$type/$id': typeof TitleTypeIdRoute
   '/assistant': typeof AuthenticatedAssistantIndexRoute
   '/classroom': typeof AuthenticatedClassroomIndexRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/subject/$slug': typeof SubjectSlugRoute
   '/_authenticated/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/_authenticated/classroom/$classId': typeof AuthenticatedClassroomClassIdRoute
+  '/api/public/mongo-diag': typeof ApiPublicMongoDiagRoute
   '/title/$type/$id': typeof TitleTypeIdRoute
   '/_authenticated/assistant/': typeof AuthenticatedAssistantIndexRoute
   '/_authenticated/classroom/': typeof AuthenticatedClassroomIndexRoute
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/subject/$slug'
     | '/assistant/$threadId'
     | '/classroom/$classId'
+    | '/api/public/mongo-diag'
     | '/title/$type/$id'
     | '/assistant/'
     | '/classroom/'
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/subject/$slug'
     | '/assistant/$threadId'
     | '/classroom/$classId'
+    | '/api/public/mongo-diag'
     | '/title/$type/$id'
     | '/assistant'
     | '/classroom'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '/subject/$slug'
     | '/_authenticated/assistant/$threadId'
     | '/_authenticated/classroom/$classId'
+    | '/api/public/mongo-diag'
     | '/title/$type/$id'
     | '/_authenticated/assistant/'
     | '/_authenticated/classroom/'
@@ -235,6 +247,7 @@ export interface RootRouteChildren {
   SubjectsRoute: typeof SubjectsRoute
   ApiChatRoute: typeof ApiChatRoute
   SubjectSlugRoute: typeof SubjectSlugRoute
+  ApiPublicMongoDiagRoute: typeof ApiPublicMongoDiagRoute
   TitleTypeIdRoute: typeof TitleTypeIdRoute
 }
 
@@ -345,6 +358,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TitleTypeIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/mongo-diag': {
+      id: '/api/public/mongo-diag'
+      path: '/api/public/mongo-diag'
+      fullPath: '/api/public/mongo-diag'
+      preLoaderRoute: typeof ApiPublicMongoDiagRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/classroom/$classId': {
       id: '/_authenticated/classroom/$classId'
       path: '/$classId'
@@ -420,6 +440,7 @@ const rootRouteChildren: RootRouteChildren = {
   SubjectsRoute: SubjectsRoute,
   ApiChatRoute: ApiChatRoute,
   SubjectSlugRoute: SubjectSlugRoute,
+  ApiPublicMongoDiagRoute: ApiPublicMongoDiagRoute,
   TitleTypeIdRoute: TitleTypeIdRoute,
 }
 export const routeTree = rootRouteImport
