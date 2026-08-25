@@ -74,7 +74,12 @@ async function database() {
 const app = express();
 app.use(express.json({ limit: "2mb" }));
 
+app.get("/", (_req, res) => {
+  res.json({ service: "eduflix-mongo-api", ok: true, endpoints: ["/health", "/v1/:collection/*"] });
+});
+
 app.get("/health", async (_req, res) => {
+
   try {
     const db = await database();
     await db.command({ ping: 1 });
