@@ -1,872 +1,171 @@
-## EduFlix
+# EduFlix
 
-## An Educational Movie & Series Recommendation App
+An educational movie and series recommendation app. EduFlix helps students, teachers and lifelong learners find documentaries, films and series that match what they want to learn — turning screen time into study time.
 
+## What it does
 
-## Goal
+- **Discover by subject** — Browse Science, Mathematics, Technology, Engineering, Social Sciences, Health, Business, Arts, Environment and Life Skills.
+- **Filter by topic, level and format** — Each subject has focused topics and filters for Beginner → Professional and Documentary / Series / Movie / Mini Series / Biography / Based on Real Events.
+- **Get details** — View posters, synopsis, release year, rating, runtime, subjects covered and streaming-style recommendations.
+- **Save and annotate** — Sign in to bookmark titles and add personal study notes on the watchlist dashboard.
+- **AI learning assistant** — Ask for recommendations ("I want to learn genetics", "World War II documentaries") and get threaded, explained suggestions.
+- **Classrooms** — Teachers can create classes, invite students, build playlists and assign titles; students track assignment progress.
+- **Admin controls** — First user can claim admin access, then manage roles, users, classes and assignments.
 
- 
+## Tech stack
 
-This app recommends educational movies, documentaries, and TV series based on what a student or curious wants to learn rather than entertainment genres.
+| Layer | Technology |
+| --- | --- |
+| Framework | TanStack Start v1 (React 19 + Vite) |
+| Language | TypeScript |
+| Styling | Tailwind CSS v4 |
+| Components | shadcn/ui + Radix |
+| Auth | Lovable Cloud (Supabase Auth) — email/password + Google OAuth |
+| App data | MongoDB Atlas |
+| Movie data | TMDB API |
+| AI | Lovable AI Gateway via `ai-sdk` |
+| Hosting | Cloudflare Workers (app) + Render/Railway/Fly (Mongo gateway) |
 
- 
+## Why MongoDB via a gateway?
 
-For example,
+The app runs on Cloudflare Workers, which cannot open raw TCP sockets. The native MongoDB driver needs a TCP connection, so a small companion Express service (`mongo-api/`) acts as an HTTPS bridge between the app and MongoDB Atlas. The app calls this gateway from server functions only; it is never exposed to the browser.
 
-Biology → Genetics → Beginner → TV Series
+## Getting started
 
-History → World War II → Advanced → Documentary
+### 1. Install dependencies
 
-Computer Science → Artificial Intelligence → Intermediate → Movie
-
- 
-
-The recommendations is design to help people understand academic concepts while being entertaining.
-
-
- 
-
-## Target Users
-
- 
-
-High school students
-
-College and university students
-
-Teachers
-
-Lifelong learners
-
- 
-
-
- 
-
-## Main Features
-
- 
-
-## 1. Beautiful Home Screen
-
- 
-
-The home page contain:
-
- 
-
-Search bar
-
-Featured educational movies
-
-Trending educational documentaries
-
-Continue Watching
-
-Recommended for You
-
-Popular Subjects
-
-Recently Added
-
- 
-
-It use's a Netflix-style interface with a modern educational feel.
-
-
- 
-
-## 2. Subject Categories
-
- 
-
-This app has categories including:
-
- 
-
-## Science
-
- 
-
-Biology
-
-Chemistry
-
-Physics
-
-Environmental Science
-
-Astronomy
-
-Genetics
-
-Microbiology
-
-Anatomy
-
- 
-
-## Mathematics
-
- 
-
-Algebra
-
-Geometry
-
-Calculus
-
-Statistics
-
-Probability
-
- 
-
-## Technology
-
- 
-
-Computer Science
-
-Programming
-
-Artificial Intelligence
-
-Cybersecurity
-
-Robotics
-
-Data Science
-
- 
-
-## Engineering
-
- 
-
-Mechanical
-
-Civil
-
-Electrical
-
-Aerospace
-
-Biomedical
-
- 
-
-## Social Sciences
-
- 
-
-History
-
-Geography
-
-Economics
-
-Sociology
-
-Political Science
-
-Government
-
- 
-
-## Health
-
- 
-
-Medicine
-
-Nursing
-
-Psychology
-
-Public Health
-
-Nutrition
-
- 
-
-## Business
-
- 
-
-Entrepreneurship
-
-Marketing
-
-Accounting
-
-Finance
-
-Leadership
-
- 
-
-## Arts
-
- 
-
-Literature
-
-Philosophy
-
-Languages
-
-Music
-
-Art History
-
- 
-
-## Environment
-
- 
-
-Climate Change
-
-Conservation
-
-Renewable Energy
-
- 
-
-### Life Skills
-
- 
-
-Personal Finance
-
-Public Speaking
-
-Critical Thinking
-
-Communication
-
-Productivity
-
- 
-
-## 3. Topic Selection
-
- 
-
-Each subject have smaller topics.
-
- 
-
-Example:
-
- 
-
-Biology
-
- 
-
-Cells
-
-Genetics
-
-Evolution
-
-Human Body
-
-Plants
-
-Ecology
-
-DNA
-
-Microorganisms
-
- 
-
-History
-
- 
-
-Ancient Egypt
-
-Ancient Rome
-
-World War I
-
-World War II
-
-Cold War
-
-African History
-
-American History
-
- 
-
-Computer Science
-
- 
-
-Algorithms
-
-Databases
-
-AI
-
-Machine Learning
-
-Networking
-
-Operating Systems
-
-Cybersecurity
-
- 
-
-## 4. Learning Level
-
- 
-
-The system allow users to choose:
-
- 
-
-Beginner
-
-Intermediate
-
-Advanced
-
-Professional
-
-
- 
-
-## 5. Learning Format
-
- 
-
-It allow users to filter by:
-
- 
-
-Movie
-
-TV Series
-
-Documentary
-
-Animated Film
-
-Historical Drama
-
-Biography
-
-Based on Real Events
-
-Short Film
-
-Mini Series
-
- 
-
-## 6. Recommendation Engine
-
- 
-
-A feature in the system that recommend content based on:
-
- 
-
-Selected subject
-
-Selected topic
-
-Difficulty level
-
-Preferred format
-
-Watch history
-
-User ratings
-
-Favorites
-
-Recently watched
-
- 
-
-The recommendation algorithm improve as users interact with the app.
-
- 
-
-## 7. Movie Details Page
-
- 
-
-Each recommendation include:
-
- 
-Poster
-
-Trailer
-
-Synopsis
-
-Subjects covered
-
-Topics covered
-
-Educational value
-
-Difficulty level
-
-Runtime
-
-Release year
-
-Rating
-
-Cast
-
-Director
-
-Streaming availability
-
-Similar recommendations
-
- 
-
- 
-
-## 8. Educational Tags
-
- 
-
-Each movie have tags like:
-
- 
-
-Biology
-
- 
-
-DNA
-
-Evolution
-
-Genetics
-
-Human Anatomy
-
- 
-
-History
-
- 
-
-World War II
-
-Renaissance
-
-Ancient Civilizations
-
- 
-
-Technology
-
- 
-
-Artificial Intelligence
-
-Programming
-
-Robotics
-
- 
-
-Business
-
- 
-
-Entrepreneurship
-
-Leadership
-
-Marketing
-
- 
-
- 
-
-## 9. Smart Search
-
- 
-
-Allow searching by:
-
- 
-
-Subject
-
-Topic
-
-Movie title
-
-Actor
-
-Director
-
-Keyword
-
- 
-
- 
-
-## 10. User Accounts
-
- 
-
-Users can:
-
- 
-
-Sign up
-
-Log in
-
-Save favorites
-
-Create playlists
-
-Continue watching
-
-Rate content
-
-Leave reviews
-
- 
-
- 
-
-## 11. Teacher Mode
-
- 
-
-User's who are teachers can:
-
- 
-
-Create class playlists
-
-Share recommendations
-
-Assign movies
-
-Track student progress
-
- 
-
-
- 
-
-## 12. Student Dashboard
-
- 
-
-User's who are students also has a dashboard that display's:
-
- 
-
-Learning streak
-
-Hours watched
-
-Subjects explored
-
-Completed playlists
-
-Favorite subjects
-
-Progress charts
-
-Achievement badges
-
-
- 
-
-## 13. AI Recommendation Assistant
-
- 
-
-Include an AI chatbot that answers questions like:
-
- 
-
-"I want to learn genetics."
-
- 
-
-"I need documentaries about World War II."
-
- 
-
-"Recommend movies for learning economics."
-
- 
-
-"I'm preparing for my biology exam."
-
- 
-
-The AI recommend the best educational content and explain why each recommendation is useful.
-
- 
-
- 
-
-## 14. AI Summary
-
- 
-
-For every movie, the AI generate:
-
- 
-
-Learning objectives
-
-Key concepts
-
-Important vocabulary
-
-Discussion questions
-
-Quiz (10 questions)
-
-Suggested reading
-
-Related movies
-
- 
-
-
- 
-
-Community Features
-
- 
-
-Users can:
-
- 
-
-Follow friends
-
-Share playlists
-
-Review movies
-
-Like reviews
-
-Recommend movies to classmates
-
- 
-
- 
-## 16. Admin Panel
-
- 
-
-Admins can:
-
- 
-
-Add movies
-
-Edit metadata
-
-Remove movies
-
-Approve reviews
-
-Manage users
-
-View analytics
-
-
- 
-
-## Design Requirements
-
- 
-
-The app has a premium interface inspired by Netflix and Spotify.
-
- 
-
-Use:
-
- 
-
-Dark Mode
-
-Smooth animations
-
-Glassmorphism cards
-
-Responsive design
-
-Mobile-first layout
-
-Accessibility support
-
-
-
- 
-## Technical Requirements
-
- 
-
-The application was design using:
-
- 
-
-Frontend:
-
- 
-
-React or Next.js
-
-TypeScript
-
-Tailwind CSS
-
- 
-
-Backend:
-
- 
-
-Node.js
-
-Express
-
-PostgreSQL or MongoDB
-
- 
-
-Authentication:
-
- 
-
-Firebase Authentication or Auth.js
-
- 
-
-Movie Data:
-
- 
-
-TMDB API for movie information
-
-YouTube API for trailers
-
- 
-
-AI:
-
- 
-
-OpenAI API or Gemini API for recommendations, summaries, quizzes, and chatbot features
-
- 
-
-## Deployment:
-
- 
-
-Vercel (frontend)
-
-Railway, Render, or Supabase (backend/database)
-
-
-
- 
-
-## Bonus Features
-
- 
-Offline saved playlists
-
-AI-generated study plans
-
-Voice search
-
-Watch parties
-
-Calendar reminders
-
-Gamification with points and badges
-
-Personalized daily recommendations
-
-Multi-language support
-
-Accessibility options
-
-Parent and teacher dashboards
-
- 
-
- 
-
-## Deliverables
-
-Complete UI/UX design.
-
-Database schema.
-
-API architecture.
-
-Full frontend.
-
-Full backend.
-
-Authentication.
-
-AI recommendation system.
-
-Educational metadata model.
-
-Admin dashboard.
-
-Teacher dashboard.
-
-Student dashboard.
-
-Deployment guide.
-
-Production-ready, scalable code with clear comments and best practices.
-
- 
-
-The application is polished, modern, scalable, secure, and ready for production with an intuitive user experience comparable to leading streaming platforms, while remaining focused on helping students discover educational movies and series that match their learning goals.
-
- 
-## Something that will later be added to the app as it's new feature.
-
-One suggestion that could make the app stand out even more is to **recommend individual scenes or episodes**, not just entire movies or series. For example, if a student is studying **Photosynthesis**, the app could point them to *Episode 3, 14:20–19:10* of a documentary where that concept is explained. That level of precision would make the app much more useful for studying than existing streaming recommendation systems.
-
-
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+```bash
+bun install
 ```
+
+### 2. Configure environment variables
+
+Create or update `.env` with the values Lovable Cloud provides, plus your external API keys:
+
+```bash
+# Lovable Cloud / Supabase (auth)
+VITE_SUPABASE_URL=https://...
+VITE_SUPABASE_ANON_KEY=...
+
+# TMDB (movie data)
+TMDB_API_KEY=...
+
+# Mongo API gateway (data layer)
+MONGO_API_URL=https://your-gateway.onrender.com
+MONGO_API_KEY=...
+```
+
+### 3. Run the dev server
+
+```bash
+bun dev
+```
+
+Open `http://localhost:8080`.
+
+### 4. Run the Mongo API gateway locally (optional)
+
+If you are using the Mongo data layer, start the companion service:
+
+```bash
+cd mongo-api
+npm install
+MONGODB_URI="mongodb+srv://..." \
+MONGO_API_KEY="$(openssl rand -hex 32)" \
+npm start
+```
+
+Then set `MONGO_API_URL=http://localhost:8787` in the app `.env`.
+
+## Environment variables
+
+### App (Lovable / local `.env`)
+
+| Variable | Purpose |
+| --- | --- |
+| `VITE_SUPABASE_URL` | Lovable Cloud / Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Public Supabase anon key |
+| `TMDB_API_KEY` | API key from [TMDB](https://www.themoviedb.org/settings/api) |
+| `MONGO_API_URL` | HTTPS endpoint of the `mongo-api` service |
+| `MONGO_API_KEY` | Shared secret between app and gateway |
+
+### Mongo API gateway (Render / Railway / Fly)
+
+| Variable | Purpose |
+| --- | --- |
+| `MONGODB_URI` | MongoDB Atlas connection string |
+| `MONGODB_DB` | Database name (default: `eduflix`) |
+| `MONGO_API_KEY` | Same shared secret as above |
+| `PORT` | Listen port (default: `8787`) |
+
+## Deployment
+
+1. **App**: Deploy through Lovable. Lovable Cloud handles auth; external secrets are added in project settings.
+2. **Mongo gateway**: Deploy the `mongo-api/` folder to Render, Railway or Fly.
+   - Build command: `npm install`
+   - Start command: `npm start`
+   - Health check: `GET /health`
+3. After the gateway is live, add `MONGO_API_URL` and `MONGO_API_KEY` to the Lovable app secrets.
+
+## Project structure
+
+```text
+src/
+  components/       UI components (Navbar, Rail, TitleCard, AssistantChat, etc.)
+  hooks/            React hooks (auth, favorites, role, mobile)
+  integrations/     Lovable Cloud and Supabase clients
+  lib/              Server functions, data layer, utilities
+  routes/           TanStack file-based routes
+  styles.css        Tailwind v4 theme and global styles
+
+mongo-api/
+  server.js         Express HTTPS gateway to MongoDB Atlas
+  migrate.js        Postgres → MongoDB migration script
+  README.md         Gateway-specific docs
+```
+
+## Key routes
+
+| Route | Description |
+| --- | --- |
+| `/` | Home with featured pick, trending docs, series and subjects |
+| `/subjects` | Browse all subjects |
+| `/subject/:slug` | Subject page with topic filters |
+| `/title/:type/:id` | Movie / series detail page |
+| `/search` | Search titles |
+| `/auth` | Sign in / sign up |
+| `/dashboard` | Saved watchlist with study notes |
+| `/assistant` | AI learning assistant conversations |
+| `/classroom` | Teacher/student classes and assignments |
+| `/admin` | Admin panel for users, roles and classrooms |
+
+## Data model (MongoDB)
+
+Collections managed through the gateway:
+
+- `profiles`
+- `user_roles`
+- `classes`
+- `class_members`
+- `class_invites`
+- `assignments`
+- `assignment_progress`
+- `favorites`
+- `assistant_threads`
+- `assistant_messages`
+
+Authentication itself stays in Lovable Cloud / Supabase Auth. The gateway is only reached from server functions, which enforce ownership rules before querying MongoDB.
+
+## Scripts
+
+| Command | Description |
+| --- | --- |
+| `bun dev` | Start the Vite dev server |
+| `bun run build` | Production build |
+| `bun run test` | Run Vitest tests |
+| `bun run lint` | Run ESLint |
+| `bun run format` | Format with Prettier |
+
+## License
+
+MIT
