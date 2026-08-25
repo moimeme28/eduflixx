@@ -72,6 +72,24 @@ export const getMyRole = createServerFn({ method: "GET" })
     const roles = (data ?? []).map((r) => r.role as Role);
     if (roles.includes("admin")) return { role: "admin" };
     if (roles.includes("teacher")) return { role: "teacher" };
+
+    // Persist the role selected during signup the first time this account is
+    // loaded. This also repairs teacher accounts previously defaulted to a
+    // student because their signup metadata had not been copied to MongoDB.
+    const metadata = context.claims?.user_metadata;
+    const signupRole =
+      metadata && typeof metadata === "object" && "role" in metadata
+        ? (metadata as { role?: unknown }).role
+        : undefined;
+    if (signupRole === "teacher" || roles.length === 0) {
+      const role: Role = signupRole === "teacher" ? "teacher" : "student";
+      const { error } = await context.db
+        .from("user_roles")
+        .upsert({ user_id: context.userId, role }, { onConflict: "user_id,role" });
+      if (error) throw new Error(error.message);
+      return { role };
+    }
+
     return { role: "student" };
   });
 
