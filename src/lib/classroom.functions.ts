@@ -74,13 +74,14 @@ export const getMyRole = createServerFn({ method: "GET" })
     if (roles.includes("teacher")) return { role: "teacher" };
 
     // Persist the role selected during signup the first time this account is
-    // loaded. Supabase stores signup `options.data` under `user_metadata`.
-    if (roles.length === 0) {
-      const metadata = context.claims?.user_metadata;
-      const signupRole =
-        metadata && typeof metadata === "object" && "role" in metadata
-          ? (metadata as { role?: unknown }).role
-          : undefined;
+    // loaded. This also repairs teacher accounts previously defaulted to a
+    // student because their signup metadata had not been copied to MongoDB.
+    const metadata = context.claims?.user_metadata;
+    const signupRole =
+      metadata && typeof metadata === "object" && "role" in metadata
+        ? (metadata as { role?: unknown }).role
+        : undefined;
+    if (signupRole === "teacher" || roles.length === 0) {
       const role: Role = signupRole === "teacher" ? "teacher" : "student";
       const { error } = await context.db
         .from("user_roles")
