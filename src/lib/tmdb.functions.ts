@@ -42,7 +42,11 @@ async function tmdb<T>(path: string, params: Record<string, string> = {}): Promi
   const url = new URL(`${TMDB_BASE}${path}`);
   url.searchParams.set("api_key", key);
   url.searchParams.set("language", "en-US");
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  for (const [k, v] of Object.entries(params)) {
+    // An empty value means "drop this param" (e.g. remove the language filter).
+    if (v === "") url.searchParams.delete(k);
+    else url.searchParams.set(k, v);
+  }
   const res = await fetch(url.toString());
   if (!res.ok) throw new Error(`TMDB request failed (${res.status})`);
   return (await res.json()) as T;
@@ -370,6 +374,43 @@ interface RawDetails extends RawItem {
   similar?: { results?: RawItem[] };
 }
 
+interface RawVideo {
+  key: string;
+  type: string;
+  site: string;
+  name?: string;
+  official?: boolean;
+  size?: number;
+  published_at?: string;
+  iso_639_1?: string;
+}
+
+// Rank YouTube videos so we surface a real trailer when one exists, falling
+// back through teasers/clips instead of returning nothing.
+const VIDEO_TYPE_SCORE: Record<string, number> = {
+  Trailer: 100,
+  Teaser: 80,
+  Clip: 40,
+  Featurette: 30,
+  "Opening Credits": 10,
+  "Behind the Scenes": 5,
+};
+
+function pickTrailer(videos: RawVideo[]): string | null {
+  const scored = videos
+    .filter((v) => v.site === "YouTube" && v.key)
+    .map((v) => {
+      let score = VIDEO_TYPE_SCORE[v.type] ?? 1;
+      if (v.official) score += 25;
+      if (v.iso_639_1 === "en") score += 10;
+      if ((v.size ?? 0) >= 1080) score += 5;
+      if (/official trailer/i.test(v.name ?? "")) score += 15;
+      return { v, score };
+    })
+    .sort((a, b) => b.score - a.score);
+  return scored[0]?.v.key ?? null;
+}
+
 // Full details for a movie or series (cast, trailer, similar, etc).
 export const getTitleDetails = createServerFn({ method: "GET" })
   .inputValidator((input: { mediaType: "movie" | "tv"; id: number }) => input)
@@ -377,11 +418,40 @@ export const getTitleDetails = createServerFn({ method: "GET" })
     const { mediaType, id } = data;
     const raw = await tmdb<RawDetails>(`/${mediaType}/${id}`, {
       append_to_response: "credits,videos,similar",
+      // Include language-less and English videos; the default en-US filter
+      // hides most trailers on non-US titles.
+      include_video_language: "en,null",
     });
     const base = normalize(raw, mediaType)!;
-    const trailer = raw.videos?.results?.find(
-      (v) => v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser"),
-    );
+    let videos = (raw.videos?.results ?? []) as RawVideo[];
+    let trailerKey = pickTrailer(videos);
+
+    // Fallback 1: unfiltered videos endpoint (any language).
+    if (!trailerKey) {
+      try {
+        const all = await tmdb<{ results?: RawVideo[] }>(`/${mediaType}/${id}/videos`, {
+          language: "",
+          include_video_language: "en,null,en-US",
+        });
+        videos = all.results ?? [];
+        trailerKey = pickTrailer(videos);
+      } catch {
+        /* ignore */
+      }
+    }
+
+    // Fallback 2: for series, a trailer often only exists on season 1.
+    if (!trailerKey && mediaType === "tv") {
+      try {
+        const s1 = await tmdb<{ results?: RawVideo[] }>(`/tv/${id}/season/1/videos`, {
+          language: "",
+        });
+        trailerKey = pickTrailer(s1.results ?? []);
+      } catch {
+        /* ignore */
+      }
+    }
+    const trailer = trailerKey ? { key: trailerKey } : undefined;
     const director = raw.credits?.crew?.find((c) => c.job === "Director")?.name ?? null;
     return {
       ...base,
