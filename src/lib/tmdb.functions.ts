@@ -22,6 +22,18 @@ export interface CastMember {
   profile: string | null;
 }
 
+export interface WatchOption {
+  kind: "stream" | "free" | "rent" | "buy";
+  name: string;
+  logo: string | null;
+}
+
+export interface WatchAvailability {
+  region: string;
+  link: string | null;
+  options: WatchOption[];
+}
+
 export interface TitleDetails extends TitleItem {
   runtime: number | null;
   genres: string[];
@@ -372,6 +384,50 @@ interface RawDetails extends RawItem {
   };
   videos?: { results?: { key: string; type: string; site: string }[] };
   similar?: { results?: RawItem[] };
+  "watch/providers"?: { results?: Record<string, RawRegionProviders> };
+}
+
+interface RawProvider {
+  provider_id: number;
+  provider_name: string;
+  logo_path?: string | null;
+  display_priority?: number;
+}
+
+interface RawRegionProviders {
+  link?: string;
+  flatrate?: RawProvider[];
+  free?: RawProvider[];
+  ads?: RawProvider[];
+  rent?: RawProvider[];
+  buy?: RawProvider[];
+}
+
+// Flatten a TMDB (JustWatch) region block into the shape the UI renders.
+function normalizeProviders(region: string, r: RawRegionProviders): WatchAvailability {
+  const map = (list: RawProvider[] | undefined, kind: WatchOption["kind"]): WatchOption[] =>
+    (list ?? [])
+      .slice()
+      .sort((a, b) => (a.display_priority ?? 99) - (b.display_priority ?? 99))
+      .map((p) => ({
+        kind,
+        name: p.provider_name,
+        logo: img(p.logo_path ?? null, "w92"),
+      }));
+  const options = [
+    ...map(r.flatrate, "stream"),
+    ...map(r.free, "free"),
+    ...map(r.ads, "free"),
+    ...map(r.rent, "rent"),
+    ...map(r.buy, "buy"),
+  ];
+  // One entry per provider — keep the cheapest access kind we saw first.
+  const seen = new Set<string>();
+  return {
+    region,
+    link: r.link ?? null,
+    options: options.filter((o) => (seen.has(o.name) ? false : (seen.add(o.name), true))),
+  };
 }
 
 interface RawVideo {
