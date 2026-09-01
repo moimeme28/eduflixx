@@ -22,6 +22,18 @@ export interface CastMember {
   profile: string | null;
 }
 
+export interface WatchOption {
+  kind: "stream" | "free" | "rent" | "buy";
+  name: string;
+  logo: string | null;
+}
+
+export interface WatchAvailability {
+  region: string;
+  link: string | null;
+  options: WatchOption[];
+}
+
 export interface TitleDetails extends TitleItem {
   runtime: number | null;
   genres: string[];
