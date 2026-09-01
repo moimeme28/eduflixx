@@ -42,7 +42,11 @@ async function tmdb<T>(path: string, params: Record<string, string> = {}): Promi
   const url = new URL(`${TMDB_BASE}${path}`);
   url.searchParams.set("api_key", key);
   url.searchParams.set("language", "en-US");
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  for (const [k, v] of Object.entries(params)) {
+    // An empty value means "drop this param" (e.g. remove the language filter).
+    if (v === "") url.searchParams.delete(k);
+    else url.searchParams.set(k, v);
+  }
   const res = await fetch(url.toString());
   if (!res.ok) throw new Error(`TMDB request failed (${res.status})`);
   return (await res.json()) as T;
