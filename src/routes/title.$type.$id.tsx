@@ -21,8 +21,8 @@ function TitlePage() {
   const { type, id } = Route.useLoaderData();
   const detailsFn = useServerFn(getTitleDetails);
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["title", type, id],
-    queryFn: () => detailsFn({ data: { mediaType: type, id } }),
+    queryKey: ["title", type, id, region],
+    queryFn: () => detailsFn({ data: { mediaType: type, id, region } }),
   });
 
   if (isLoading) {
