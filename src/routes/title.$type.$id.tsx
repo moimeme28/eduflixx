@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Star, Clock, Calendar, User, Film, GraduationCap, ArrowLeft } from "lucide-react";
@@ -20,6 +20,7 @@ export const Route = createFileRoute("/title/$type/$id")({
 });
 
 function TitlePage() {
+  const router = useRouter();
   const { type, id } = Route.useLoaderData();
   const detailsFn = useServerFn(getTitleDetails);
   // Detect the viewer's country after hydration so streaming availability
