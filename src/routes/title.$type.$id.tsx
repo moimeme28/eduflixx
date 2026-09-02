@@ -7,6 +7,7 @@ import { getTitleDetails } from "@/lib/tmdb.functions";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { TitleCard } from "@/components/TitleCard";
 import { StudyGuide } from "@/components/StudyGuide";
+import { WhereToWatch } from "@/components/WhereToWatch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
