@@ -469,11 +469,12 @@ function pickTrailer(videos: RawVideo[]): string | null {
 
 // Full details for a movie or series (cast, trailer, similar, etc).
 export const getTitleDetails = createServerFn({ method: "GET" })
-  .inputValidator((input: { mediaType: "movie" | "tv"; id: number }) => input)
+  .inputValidator((input: { mediaType: "movie" | "tv"; id: number; region?: string }) => input)
   .handler(async ({ data }): Promise<TitleDetails> => {
     const { mediaType, id } = data;
+    const region = (data.region || "US").toUpperCase();
     const raw = await tmdb<RawDetails>(`/${mediaType}/${id}`, {
-      append_to_response: "credits,videos,similar",
+      append_to_response: "credits,videos,similar,watch/providers",
       // Include language-less and English videos; the default en-US filter
       // hides most trailers on non-US titles.
       include_video_language: "en,null",
