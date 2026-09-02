@@ -40,6 +40,7 @@ export interface TitleDetails extends TitleItem {
   director: string | null;
   cast: CastMember[];
   trailerKey: string | null;
+  watch: WatchAvailability | null;
   similar: TitleItem[];
   tagline: string | null;
 }
