@@ -20,6 +20,14 @@ export const Route = createFileRoute("/title/$type/$id")({
 function TitlePage() {
   const { type, id } = Route.useLoaderData();
   const detailsFn = useServerFn(getTitleDetails);
+  // Detect the viewer's country after hydration so streaming availability
+  // matches where they actually are (defaults to US on the server).
+  const [region, setRegion] = useState("US");
+  useEffect(() => {
+    const locale = new Intl.Locale(navigator.language || "en-US");
+    const detected = (locale as { region?: string }).region;
+    if (detected) setRegion(detected.toUpperCase());
+  }, []);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["title", type, id, region],
     queryFn: () => detailsFn({ data: { mediaType: type, id, region } }),
