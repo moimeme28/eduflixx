@@ -26,9 +26,13 @@ function TitlePage() {
   // matches where they actually are (defaults to US on the server).
   const [region, setRegion] = useState("US");
   useEffect(() => {
-    const locale = new Intl.Locale(navigator.language || "en-US");
-    const detected = (locale as { region?: string }).region;
-    if (detected) setRegion(detected.toUpperCase());
+    try {
+      const tag = navigator.language || "en-US";
+      const detected = new Intl.Locale(tag).region ?? tag.split("-")[1];
+      if (detected && /^[A-Za-z]{2}$/.test(detected)) setRegion(detected.toUpperCase());
+    } catch {
+      /* keep the US default */
+    }
   }, []);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["title", type, id, region],
