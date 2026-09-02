@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -6,6 +7,7 @@ import { getTitleDetails } from "@/lib/tmdb.functions";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { TitleCard } from "@/components/TitleCard";
 import { StudyGuide } from "@/components/StudyGuide";
+import { WhereToWatch } from "@/components/WhereToWatch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
@@ -20,9 +22,21 @@ export const Route = createFileRoute("/title/$type/$id")({
 function TitlePage() {
   const { type, id } = Route.useLoaderData();
   const detailsFn = useServerFn(getTitleDetails);
+  // Detect the viewer's country after hydration so streaming availability
+  // matches where they actually are (defaults to US on the server).
+  const [region, setRegion] = useState("US");
+  useEffect(() => {
+    try {
+      const tag = navigator.language || "en-US";
+      const detected = new Intl.Locale(tag).region ?? tag.split("-")[1];
+      if (detected && /^[A-Za-z]{2}$/.test(detected)) setRegion(detected.toUpperCase());
+    } catch {
+      /* keep the US default */
+    }
+  }, []);
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["title", type, id],
-    queryFn: () => detailsFn({ data: { mediaType: type, id } }),
+    queryKey: ["title", type, id, region],
+    queryFn: () => detailsFn({ data: { mediaType: type, id, region } }),
   });
 
   if (isLoading) {
@@ -169,6 +183,8 @@ function TitlePage() {
                 soon.
               </p>
             </div>
+
+            <WhereToWatch title={data.title} watch={data.watch} region={region} />
 
             {data.director && (
               <p className="flex items-center gap-2 text-sm">

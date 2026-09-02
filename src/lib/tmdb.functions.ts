@@ -40,6 +40,7 @@ export interface TitleDetails extends TitleItem {
   director: string | null;
   cast: CastMember[];
   trailerKey: string | null;
+  watch: WatchAvailability | null;
   similar: TitleItem[];
   tagline: string | null;
 }
@@ -469,11 +470,12 @@ function pickTrailer(videos: RawVideo[]): string | null {
 
 // Full details for a movie or series (cast, trailer, similar, etc).
 export const getTitleDetails = createServerFn({ method: "GET" })
-  .inputValidator((input: { mediaType: "movie" | "tv"; id: number }) => input)
+  .inputValidator((input: { mediaType: "movie" | "tv"; id: number; region?: string }) => input)
   .handler(async ({ data }): Promise<TitleDetails> => {
     const { mediaType, id } = data;
+    const region = (data.region || "US").toUpperCase();
     const raw = await tmdb<RawDetails>(`/${mediaType}/${id}`, {
-      append_to_response: "credits,videos,similar",
+      append_to_response: "credits,videos,similar,watch/providers",
       // Include language-less and English videos; the default en-US filter
       // hides most trailers on non-US titles.
       include_video_language: "en,null",
@@ -509,7 +511,24 @@ export const getTitleDetails = createServerFn({ method: "GET" })
     }
     const trailer = trailerKey ? { key: trailerKey } : undefined;
     const director = raw.credits?.crew?.find((c) => c.job === "Director")?.name ?? null;
+
+    // Where-to-watch: prefer the viewer's region, then US, then any region that
+    // actually lists a provider so the section is rarely empty.
+    const providerResults = raw["watch/providers"]?.results ?? {};
+    const candidates = [region, "US", "GB", "CA", ...Object.keys(providerResults)];
+    let watch: WatchAvailability | null = null;
+    for (const code of candidates) {
+      const block = providerResults[code];
+      if (!block) continue;
+      const normalized = normalizeProviders(code, block);
+      if (normalized.options.length) {
+        watch = normalized;
+        break;
+      }
+    }
+
     return {
+      watch,
       ...base,
       runtime: raw.runtime ?? raw.episode_run_time?.[0] ?? null,
       tagline: raw.tagline || null,
