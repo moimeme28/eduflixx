@@ -148,6 +148,7 @@ mongo-api/
 | `/assistant` | AI learning assistant conversations |
 | `/classroom` | Teacher/student classes and assignments |
 | `/admin` | Admin panel for users, roles and classrooms |
+| `/api/public/mongo-diag` | Connection diagnostic: app → gateway → MongoDB |
 
 ## Data model (MongoDB)
 
