@@ -510,7 +510,24 @@ export const getTitleDetails = createServerFn({ method: "GET" })
     }
     const trailer = trailerKey ? { key: trailerKey } : undefined;
     const director = raw.credits?.crew?.find((c) => c.job === "Director")?.name ?? null;
+
+    // Where-to-watch: prefer the viewer's region, then US, then any region that
+    // actually lists a provider so the section is rarely empty.
+    const providerResults = raw["watch/providers"]?.results ?? {};
+    const candidates = [region, "US", "GB", "CA", ...Object.keys(providerResults)];
+    let watch: WatchAvailability | null = null;
+    for (const code of candidates) {
+      const block = providerResults[code];
+      if (!block) continue;
+      const normalized = normalizeProviders(code, block);
+      if (normalized.options.length) {
+        watch = normalized;
+        break;
+      }
+    }
+
     return {
+      watch,
       ...base,
       runtime: raw.runtime ?? raw.episode_run_time?.[0] ?? null,
       tagline: raw.tagline || null,
