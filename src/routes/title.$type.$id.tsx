@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Star, Clock, Calendar, User, Film, GraduationCap, ArrowLeft } from "lucide-react";
@@ -20,6 +20,7 @@ export const Route = createFileRoute("/title/$type/$id")({
 });
 
 function TitlePage() {
+  const router = useRouter();
   const { type, id } = Route.useLoaderData();
   const detailsFn = useServerFn(getTitleDetails);
   // Detect the viewer's country after hydration so streaming availability
@@ -78,6 +79,11 @@ function TitlePage() {
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/50 to-transparent" />
         <Link
           to="/"
+          onClick={(e) => {
+            e.preventDefault();
+            if (router.history.canGoBack()) router.history.back();
+            else router.navigate({ to: "/" });
+          }}
           className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full glass px-3 py-1.5 text-sm sm:left-8"
         >
           <ArrowLeft className="h-4 w-4" /> Back
