@@ -79,6 +79,11 @@ function TitlePage() {
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/50 to-transparent" />
         <Link
           to="/"
+          onClick={(e) => {
+            e.preventDefault();
+            if (router.history.canGoBack()) router.history.back();
+            else router.navigate({ to: "/" });
+          }}
           className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full glass px-3 py-1.5 text-sm sm:left-8"
         >
           <ArrowLeft className="h-4 w-4" /> Back
