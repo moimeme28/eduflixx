@@ -6,11 +6,21 @@ An educational movie and series recommendation app. EduFlix helps students, teac
 
 - **Discover by subject** — Browse Science, Mathematics, Technology, Engineering, Social Sciences, Health, Business, Arts, Environment and Life Skills.
 - **Filter by topic, level and format** — Each subject has focused topics and filters for Beginner → Professional and Documentary / Series / Movie / Mini Series / Biography / Based on Real Events.
-- **Get details** — View posters, synopsis, release year, rating, runtime, subjects covered and streaming-style recommendations.
+- **Get details** — View posters, synopsis, release year, rating, runtime, genres, trailers and full cast.
+- **Watch it** — Each title page shows "Where to watch": real streaming, rent and buy providers for the viewer's country (TMDB/JustWatch data) with deep links out to the provider.
+- **Smarter trailers** — Trailer discovery ranks official trailers above teasers and clips, with fallbacks (unfiltered video list, season 1 for series) so more titles play a video.
 - **Save and annotate** — Sign in to bookmark titles and add personal study notes on the watchlist dashboard.
 - **AI learning assistant** — Ask for recommendations ("I want to learn genetics", "World War II documentaries") and get threaded, explained suggestions.
 - **Classrooms** — Teachers can create classes, invite students, build playlists and assign titles; students track assignment progress.
 - **Admin controls** — First user can claim admin access, then manage roles, users, classes and assignments.
+
+## Recent improvements
+
+- Title pages get streaming availability per region (auto-detected from the browser locale, falling back to US or any region with listings).
+- Trailer lookup uses ranked video scoring and multi-stage fallbacks instead of a single query.
+- Role assignment during signup is now repaired on sign-in — teacher accounts created with the wrong role are fixed automatically.
+- The Mongo gateway opens connections lazily and stays healthy even when Atlas credentials are temporarily wrong, plus a root status endpoint (`/`) and a diagnostic route (`/api/public/mongo-diag`) in the app.
+- The Back button on title pages returns to the previous page in the viewer's history instead of always going home.
 
 ## Tech stack
 
@@ -138,6 +148,7 @@ mongo-api/
 | `/assistant` | AI learning assistant conversations |
 | `/classroom` | Teacher/student classes and assignments |
 | `/admin` | Admin panel for users, roles and classrooms |
+| `/api/public/mongo-diag` | Connection diagnostic: app → gateway → MongoDB |
 
 ## Data model (MongoDB)
 
