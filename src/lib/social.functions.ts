@@ -288,6 +288,18 @@ export const removeListItem = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const listMyFollowing = createServerFn({ method: "GET" })
+  .middleware([requireAuthDb])
+  .handler(async ({ context }): Promise<string[]> => {
+    const { data, error } = await context.db
+      .from("follows")
+      .select("following_id")
+      .eq("follower_id", context.userId);
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((row) => row.following_id as string);
+  });
+
+
 // --- public discovery ---
 
 export const listPublicLists = createServerFn({ method: "GET" })
