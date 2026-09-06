@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SubjectSlugRouteImport } from './routes/subject.$slug'
+import { Route as ListsListIdRouteImport } from './routes/lists.$listId'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedClassroomRouteImport } from './routes/_authenticated/classroom'
@@ -60,6 +61,11 @@ const IndexRoute = IndexRouteImport.update({
 const SubjectSlugRoute = SubjectSlugRouteImport.update({
   id: '/subject/$slug',
   path: '/subject/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ListsListIdRoute = ListsListIdRouteImport.update({
+  id: '/lists/$listId',
+  path: '/lists/$listId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/classroom': typeof AuthenticatedClassroomRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/chat': typeof ApiChatRoute
+  '/lists/$listId': typeof ListsListIdRoute
   '/subject/$slug': typeof SubjectSlugRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/classroom/$classId': typeof AuthenticatedClassroomClassIdRoute
@@ -150,6 +157,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/chat': typeof ApiChatRoute
+  '/lists/$listId': typeof ListsListIdRoute
   '/subject/$slug': typeof SubjectSlugRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/classroom/$classId': typeof AuthenticatedClassroomClassIdRoute
@@ -171,6 +179,7 @@ export interface FileRoutesById {
   '/_authenticated/classroom': typeof AuthenticatedClassroomRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/api/chat': typeof ApiChatRoute
+  '/lists/$listId': typeof ListsListIdRoute
   '/subject/$slug': typeof SubjectSlugRoute
   '/_authenticated/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/_authenticated/classroom/$classId': typeof AuthenticatedClassroomClassIdRoute
@@ -192,6 +201,7 @@ export interface FileRouteTypes {
     | '/classroom'
     | '/dashboard'
     | '/api/chat'
+    | '/lists/$listId'
     | '/subject/$slug'
     | '/assistant/$threadId'
     | '/classroom/$classId'
@@ -209,6 +219,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/api/chat'
+    | '/lists/$listId'
     | '/subject/$slug'
     | '/assistant/$threadId'
     | '/classroom/$classId'
@@ -229,6 +240,7 @@ export interface FileRouteTypes {
     | '/_authenticated/classroom'
     | '/_authenticated/dashboard'
     | '/api/chat'
+    | '/lists/$listId'
     | '/subject/$slug'
     | '/_authenticated/assistant/$threadId'
     | '/_authenticated/classroom/$classId'
@@ -246,6 +258,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SubjectsRoute: typeof SubjectsRoute
   ApiChatRoute: typeof ApiChatRoute
+  ListsListIdRoute: typeof ListsListIdRoute
   SubjectSlugRoute: typeof SubjectSlugRoute
   ApiPublicMongoDiagRoute: typeof ApiPublicMongoDiagRoute
   TitleTypeIdRoute: typeof TitleTypeIdRoute
@@ -300,6 +313,13 @@ declare module '@tanstack/react-router' {
       path: '/subject/$slug'
       fullPath: '/subject/$slug'
       preLoaderRoute: typeof SubjectSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lists/$listId': {
+      id: '/lists/$listId'
+      path: '/lists/$listId'
+      fullPath: '/lists/$listId'
+      preLoaderRoute: typeof ListsListIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/chat': {
@@ -439,6 +459,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SubjectsRoute: SubjectsRoute,
   ApiChatRoute: ApiChatRoute,
+  ListsListIdRoute: ListsListIdRoute,
   SubjectSlugRoute: SubjectSlugRoute,
   ApiPublicMongoDiagRoute: ApiPublicMongoDiagRoute,
   TitleTypeIdRoute: TitleTypeIdRoute,
