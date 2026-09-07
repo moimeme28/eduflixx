@@ -5,7 +5,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { Star, Clock, Calendar, User, Film, GraduationCap, ArrowLeft } from "lucide-react";
 import { getTitleDetails } from "@/lib/tmdb.functions";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { AddToListButton } from "@/components/AddToListButton";
 import { TitleCard } from "@/components/TitleCard";
+
 import { StudyGuide } from "@/components/StudyGuide";
 import { WhereToWatch } from "@/components/WhereToWatch";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -133,7 +135,7 @@ function TitlePage() {
               </div>
             )}
 
-            <div className="mt-5">
+            <div className="mt-5 flex flex-wrap gap-3">
               <FavoriteButton
                 item={{
                   tmdbId: id,
@@ -144,7 +146,19 @@ function TitlePage() {
                   rating: data.rating,
                 }}
               />
+              <AddToListButton
+                variant="button"
+                item={{
+                  tmdbId: id,
+                  mediaType: type,
+                  title: data.title,
+                  poster: data.poster,
+                  year: data.year,
+                  rating: data.rating,
+                }}
+              />
             </div>
+
           </div>
         </div>
 

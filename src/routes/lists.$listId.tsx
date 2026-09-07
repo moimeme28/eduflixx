@@ -79,10 +79,13 @@ function ListDetailPage() {
     id: i.tmdbId,
     mediaType: i.mediaType,
     title: i.title,
+    overview: "",
     poster: i.poster,
-    year: i.year,
+    backdrop: "",
+    year: i.year ?? "",
     rating: i.rating ?? 0,
   }));
+
 
   return (
     <main className="mx-auto max-w-[1200px] px-4 py-10 sm:px-8">

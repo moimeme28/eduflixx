@@ -12,9 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SubjectsRouteImport } from './routes/subjects'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as CommunityRouteImport } from './routes/community'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as UsersUserIdRouteImport } from './routes/users.$userId'
 import { Route as SubjectSlugRouteImport } from './routes/subject.$slug'
 import { Route as ListsListIdRouteImport } from './routes/lists.$listId'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
@@ -22,6 +24,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedClassroomRouteImport } from './routes/_authenticated/classroom'
 import { Route as AuthenticatedAssistantRouteImport } from './routes/_authenticated/assistant'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedListsIndexRouteImport } from './routes/_authenticated/lists.index'
 import { Route as AuthenticatedClassroomIndexRouteImport } from './routes/_authenticated/classroom.index'
 import { Route as AuthenticatedAssistantIndexRouteImport } from './routes/_authenticated/assistant.index'
 import { Route as TitleTypeIdRouteImport } from './routes/title.$type.$id'
@@ -44,6 +47,11 @@ const SearchRoute = SearchRouteImport.update({
   path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CommunityRoute = CommunityRouteImport.update({
+  id: '/community',
+  path: '/community',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -56,6 +64,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UsersUserIdRoute = UsersUserIdRouteImport.update({
+  id: '/users/$userId',
+  path: '/users/$userId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SubjectSlugRoute = SubjectSlugRouteImport.update({
@@ -91,6 +104,11 @@ const AuthenticatedAssistantRoute = AuthenticatedAssistantRouteImport.update({
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedListsIndexRoute = AuthenticatedListsIndexRouteImport.update({
+  id: '/lists/',
+  path: '/lists/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedClassroomIndexRoute =
@@ -131,6 +149,7 @@ const AuthenticatedAssistantThreadIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/community': typeof CommunityRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/subjects': typeof SubjectsRoute
@@ -141,16 +160,19 @@ export interface FileRoutesByFullPath {
   '/api/chat': typeof ApiChatRoute
   '/lists/$listId': typeof ListsListIdRoute
   '/subject/$slug': typeof SubjectSlugRoute
+  '/users/$userId': typeof UsersUserIdRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/classroom/$classId': typeof AuthenticatedClassroomClassIdRoute
   '/api/public/mongo-diag': typeof ApiPublicMongoDiagRoute
   '/title/$type/$id': typeof TitleTypeIdRoute
   '/assistant/': typeof AuthenticatedAssistantIndexRoute
   '/classroom/': typeof AuthenticatedClassroomIndexRoute
+  '/lists/': typeof AuthenticatedListsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/community': typeof CommunityRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/subjects': typeof SubjectsRoute
@@ -159,18 +181,21 @@ export interface FileRoutesByTo {
   '/api/chat': typeof ApiChatRoute
   '/lists/$listId': typeof ListsListIdRoute
   '/subject/$slug': typeof SubjectSlugRoute
+  '/users/$userId': typeof UsersUserIdRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/classroom/$classId': typeof AuthenticatedClassroomClassIdRoute
   '/api/public/mongo-diag': typeof ApiPublicMongoDiagRoute
   '/title/$type/$id': typeof TitleTypeIdRoute
   '/assistant': typeof AuthenticatedAssistantIndexRoute
   '/classroom': typeof AuthenticatedClassroomIndexRoute
+  '/lists': typeof AuthenticatedListsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/community': typeof CommunityRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/subjects': typeof SubjectsRoute
@@ -181,18 +206,21 @@ export interface FileRoutesById {
   '/api/chat': typeof ApiChatRoute
   '/lists/$listId': typeof ListsListIdRoute
   '/subject/$slug': typeof SubjectSlugRoute
+  '/users/$userId': typeof UsersUserIdRoute
   '/_authenticated/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/_authenticated/classroom/$classId': typeof AuthenticatedClassroomClassIdRoute
   '/api/public/mongo-diag': typeof ApiPublicMongoDiagRoute
   '/title/$type/$id': typeof TitleTypeIdRoute
   '/_authenticated/assistant/': typeof AuthenticatedAssistantIndexRoute
   '/_authenticated/classroom/': typeof AuthenticatedClassroomIndexRoute
+  '/_authenticated/lists/': typeof AuthenticatedListsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/auth'
+    | '/community'
     | '/search'
     | '/sitemap.xml'
     | '/subjects'
@@ -203,16 +231,19 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/lists/$listId'
     | '/subject/$slug'
+    | '/users/$userId'
     | '/assistant/$threadId'
     | '/classroom/$classId'
     | '/api/public/mongo-diag'
     | '/title/$type/$id'
     | '/assistant/'
     | '/classroom/'
+    | '/lists/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/community'
     | '/search'
     | '/sitemap.xml'
     | '/subjects'
@@ -221,17 +252,20 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/lists/$listId'
     | '/subject/$slug'
+    | '/users/$userId'
     | '/assistant/$threadId'
     | '/classroom/$classId'
     | '/api/public/mongo-diag'
     | '/title/$type/$id'
     | '/assistant'
     | '/classroom'
+    | '/lists'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/community'
     | '/search'
     | '/sitemap.xml'
     | '/subjects'
@@ -242,24 +276,28 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/lists/$listId'
     | '/subject/$slug'
+    | '/users/$userId'
     | '/_authenticated/assistant/$threadId'
     | '/_authenticated/classroom/$classId'
     | '/api/public/mongo-diag'
     | '/title/$type/$id'
     | '/_authenticated/assistant/'
     | '/_authenticated/classroom/'
+    | '/_authenticated/lists/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  CommunityRoute: typeof CommunityRoute
   SearchRoute: typeof SearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SubjectsRoute: typeof SubjectsRoute
   ApiChatRoute: typeof ApiChatRoute
   ListsListIdRoute: typeof ListsListIdRoute
   SubjectSlugRoute: typeof SubjectSlugRoute
+  UsersUserIdRoute: typeof UsersUserIdRoute
   ApiPublicMongoDiagRoute: typeof ApiPublicMongoDiagRoute
   TitleTypeIdRoute: typeof TitleTypeIdRoute
 }
@@ -287,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/community': {
+      id: '/community'
+      path: '/community'
+      fullPath: '/community'
+      preLoaderRoute: typeof CommunityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -306,6 +351,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/users/$userId': {
+      id: '/users/$userId'
+      path: '/users/$userId'
+      fullPath: '/users/$userId'
+      preLoaderRoute: typeof UsersUserIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/subject/$slug': {
@@ -355,6 +407,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/lists/': {
+      id: '/_authenticated/lists/'
+      path: '/lists'
+      fullPath: '/lists/'
+      preLoaderRoute: typeof AuthenticatedListsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/classroom/': {
@@ -439,6 +498,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAssistantRoute: typeof AuthenticatedAssistantRouteWithChildren
   AuthenticatedClassroomRoute: typeof AuthenticatedClassroomRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedListsIndexRoute: typeof AuthenticatedListsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -446,6 +506,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAssistantRoute: AuthenticatedAssistantRouteWithChildren,
   AuthenticatedClassroomRoute: AuthenticatedClassroomRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedListsIndexRoute: AuthenticatedListsIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -455,12 +516,14 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  CommunityRoute: CommunityRoute,
   SearchRoute: SearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SubjectsRoute: SubjectsRoute,
   ApiChatRoute: ApiChatRoute,
   ListsListIdRoute: ListsListIdRoute,
   SubjectSlugRoute: SubjectSlugRoute,
+  UsersUserIdRoute: UsersUserIdRoute,
   ApiPublicMongoDiagRoute: ApiPublicMongoDiagRoute,
   TitleTypeIdRoute: TitleTypeIdRoute,
 }

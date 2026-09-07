@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { Film, Lock, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { ListWithOwner } from "@/lib/social.functions";
+import type { EduList, PublicProfile } from "@/lib/social.functions";
 
-export function ListCard({ list }: { list: ListWithOwner }) {
+export function ListCard({ list, owner }: { list: EduList; owner?: PublicProfile | null }) {
+  const ownerName = owner?.displayName ?? (list as any).owner?.displayName ?? "Unknown";
+
   return (
     <Link
       to="/lists/$listId"
@@ -23,8 +25,9 @@ export function ListCard({ list }: { list: ListWithOwner }) {
           <Film className="h-3 w-3" /> {list.itemCount ?? 0} titles
         </span>
         <span className="flex items-center gap-1">
-          <Users className="h-3 w-3" /> {list.owner.displayName || "Unknown"}
+          <Users className="h-3 w-3" /> {ownerName}
         </span>
+
       </div>
     </Link>
   );

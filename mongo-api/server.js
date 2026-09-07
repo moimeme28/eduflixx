@@ -34,7 +34,11 @@ const ALLOWED_COLLECTIONS = new Set([
   "favorites",
   "assistant_threads",
   "assistant_messages",
+  "lists",
+  "list_items",
+  "follows",
 ]);
+
 
 const client = new MongoClient(URI, { maxPoolSize: 10 });
 let connection;
@@ -59,7 +63,16 @@ async function database() {
           db.collection("favorites").createIndex({ user_id: 1, media_type: 1, tmdb_id: 1 }, { unique: true }),
           db.collection("assistant_threads").createIndex({ user_id: 1 }),
           db.collection("assistant_messages").createIndex({ thread_id: 1 }),
+          db.collection("lists").createIndex({ id: 1 }, { unique: true }),
+          db.collection("lists").createIndex({ owner_id: 1 }),
+          db.collection("lists").createIndex({ visibility: 1, subject: 1 }),
+          db.collection("list_items").createIndex({ list_id: 1 }),
+          db.collection("list_items").createIndex({ list_id: 1, tmdb_id: 1, media_type: 1 }, { unique: true }),
+          db.collection("follows").createIndex({ follower_id: 1, following_id: 1 }, { unique: true }),
+          db.collection("follows").createIndex({ follower_id: 1 }),
+          db.collection("follows").createIndex({ following_id: 1 }),
         ]);
+
         console.log(`[mongo-api] connected to ${DB_NAME}`);
         return db;
       })
