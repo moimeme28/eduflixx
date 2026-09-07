@@ -2,11 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Bookmark, Star, Film, Tv, Trash2, Pencil, Check, Sparkles, X } from "lucide-react";
+import { Bookmark, Star, Film, Tv, Trash2, Pencil, Check, Sparkles, X, ListVideo } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useFavorites } from "@/hooks/useFavorites";
 import { updateFavoriteNote, type FavoriteItem } from "@/lib/favorites.functions";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
