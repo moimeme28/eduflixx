@@ -27,19 +27,27 @@ function Dashboard() {
 
   return (
     <main className="mx-auto max-w-[1200px] px-4 py-10 sm:px-8">
-      <div className="flex items-center gap-3">
-        <span className="grid h-11 w-11 place-items-center rounded-xl bg-[image:var(--gradient-primary)] text-primary-foreground">
-          <Bookmark className="h-5 w-5" />
-        </span>
-        <div>
-          <h1 className="text-2xl font-bold sm:text-3xl">My Watchlist</h1>
-          <p className="text-sm text-muted-foreground">
-            {favorites.length} saved {favorites.length === 1 ? "title" : "titles"} to study
-          </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="grid h-11 w-11 place-items-center rounded-xl bg-[image:var(--gradient-primary)] text-primary-foreground">
+            <Bookmark className="h-5 w-5" />
+          </span>
+          <div>
+            <h1 className="text-2xl font-bold sm:text-3xl">My Watchlist</h1>
+            <p className="text-sm text-muted-foreground">
+              {favorites.length} saved {favorites.length === 1 ? "title" : "titles"} to study
+            </p>
+          </div>
         </div>
+        <Button asChild variant="outline" className="gap-2">
+          <Link to="/lists">
+            <ListVideo className="h-4 w-4" /> My lists
+          </Link>
+        </Button>
       </div>
 
       {error ? (
+
         <div className="mt-10 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm">
           <p className="font-medium text-destructive">Your watchlist is temporarily unavailable.</p>
           <p className="mt-1 text-muted-foreground">
