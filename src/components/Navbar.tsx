@@ -12,7 +12,9 @@ import {
   LogIn,
   UserCircle2,
   ShieldCheck,
+  ListVideo,
 } from "lucide-react";
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -84,7 +86,17 @@ export function Navbar() {
               <Sparkles className="h-4 w-4" /> Assistant
             </span>
           </Link>
+          <Link
+            to="/community"
+            className="rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:text-foreground"
+            activeProps={{ className: "text-foreground" }}
+          >
+            <span className="flex items-center gap-1.5">
+              <Users className="h-4 w-4" /> Community
+            </span>
+          </Link>
         </nav>
+
 
         <form onSubmit={submit} className="ml-auto hidden max-w-md flex-1 items-center sm:flex">
           <div className="relative w-full">
@@ -135,6 +147,9 @@ export function Navbar() {
               <MenuLink to="/assistant" icon={<Sparkles className="h-4 w-4" />} onClick={() => setMenuOpen(false)}>
                 AI assistant
               </MenuLink>
+              <MenuLink to="/community" icon={<Users className="h-4 w-4" />} onClick={() => setMenuOpen(false)}>
+                Community
+              </MenuLink>
 
               {user && (
                 <>
@@ -143,6 +158,9 @@ export function Navbar() {
                   </div>
                   <MenuLink to="/dashboard" icon={<Bookmark className="h-4 w-4" />} onClick={() => setMenuOpen(false)}>
                     My watchlist
+                  </MenuLink>
+                  <MenuLink to="/lists" icon={<ListVideo className="h-4 w-4" />} onClick={() => setMenuOpen(false)}>
+                    My lists
                   </MenuLink>
                   <MenuLink to="/classroom" icon={<Users className="h-4 w-4" />} onClick={() => setMenuOpen(false)}>
                     {role === "teacher" ? "Teacher dashboard" : "Student dashboard"}
@@ -154,6 +172,7 @@ export function Navbar() {
                   )}
                 </>
               )}
+
             </nav>
 
             <div className="border-t border-border p-3">

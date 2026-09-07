@@ -3,6 +3,8 @@ import { Star, Film, Tv } from "lucide-react";
 import type { TitleItem } from "@/lib/tmdb.functions";
 import { cn } from "@/lib/utils";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { AddToListButton } from "@/components/AddToListButton";
+
 
 export function TitleCard({ item, className }: { item: TitleItem; className?: string }) {
   return (
@@ -54,7 +56,20 @@ export function TitleCard({ item, className }: { item: TitleItem; className?: st
           rating: item.rating,
         }}
       />
+      <AddToListButton
+        variant="icon"
+        className="absolute right-2 top-12 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+        item={{
+          tmdbId: item.id,
+          mediaType: item.mediaType,
+          title: item.title,
+          poster: item.poster,
+          year: item.year,
+          rating: item.rating,
+        }}
+      />
     </div>
   );
 }
+
 
