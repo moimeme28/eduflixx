@@ -34,7 +34,11 @@ const ALLOWED_COLLECTIONS = new Set([
   "favorites",
   "assistant_threads",
   "assistant_messages",
+  "lists",
+  "list_items",
+  "follows",
 ]);
+
 
 const client = new MongoClient(URI, { maxPoolSize: 10 });
 let connection;
