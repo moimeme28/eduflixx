@@ -222,12 +222,16 @@ export const getMyListDetail = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false });
     if (itemsErr) throw new Error(itemsErr.message);
 
+    const ownerMap = await fetchOwners(context.db, [context.userId]);
+
     return {
       list: mapList(row),
       items: (items ?? []).map(mapItem),
       isOwner: true,
+      owner: ownerMap.get(context.userId) ?? { id: context.userId, displayName: null, email: null },
     };
   });
+
 
 // --- list items ---
 
