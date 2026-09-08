@@ -11,8 +11,10 @@ An educational movie and series recommendation app. EduFlix helps students, teac
 - **Smarter trailers** — Trailer discovery ranks official trailers above teasers and clips, with fallbacks (unfiltered video list, season 1 for series) so more titles play a video.
 - **Save and annotate** — Sign in to bookmark titles and add personal study notes on the watchlist dashboard.
 - **AI learning assistant** — Ask for recommendations ("I want to learn genetics", "World War II documentaries") and get threaded, explained suggestions.
+- **Community lists** — Create, share and discover curated learning lists. Follow other learners and see lists from people you follow.
 - **Classrooms** — Teachers can create classes, invite students, build playlists and assign titles; students track assignment progress.
 - **Admin controls** — First user can claim admin access, then manage roles, users, classes and assignments.
+
 
 ## Recent improvements
 
