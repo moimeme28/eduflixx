@@ -1,16 +1,28 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Film, Lock, Users, Calendar, ArrowLeft } from "lucide-react";
-import { getPublicListDetail, getMyListDetail } from "@/lib/social.functions";
+import { Film, Lock, Users, Calendar, ArrowLeft, Plus, Trash2, Loader2, Search } from "lucide-react";
+import { toast } from "sonner";
+import { getPublicListDetail, getMyListDetail, addListItem, removeListItem } from "@/lib/social.functions";
+import { searchTitles } from "@/lib/tmdb.functions";
 import { useAuth } from "@/hooks/useAuth";
 import { FollowButton } from "@/components/FollowButton";
 import { ListCard } from "@/components/ListCard";
 import { TitleCard } from "@/components/TitleCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TitleItem } from "@/lib/tmdb.functions";
+
 
 
 export const Route = createFileRoute("/lists/$listId")({
