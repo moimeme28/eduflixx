@@ -46,15 +46,27 @@ function ListDetailPage() {
   const { user } = useAuth();
   const initial = Route.useLoaderData();
   const listId = Route.useParams().listId;
+  const publicFn = useServerFn(getPublicListDetail);
+  const myFn = useServerFn(getMyListDetail);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["list-detail", listId],
-    queryFn: () => getPublicListDetail({ data: { listId } }),
+  const publicQuery = useQuery({
+    queryKey: ["list-detail", listId, "public"],
+    queryFn: () => publicFn({ data: { listId } }),
     initialData: initial ?? undefined,
     enabled: !!initial,
   });
 
+  const ownerQuery = useQuery({
+    queryKey: ["list-detail", listId, "owner"],
+    queryFn: () => myFn({ data: { listId } }),
+    enabled: !initial && !!user,
+  });
+
+  const data = publicQuery.data ?? ownerQuery.data;
+  const isLoading = publicQuery.isLoading || ownerQuery.isLoading;
+
   if (isLoading) {
+
     return (
       <main className="mx-auto max-w-[1200px] px-4 py-10 sm:px-8">
         <Skeleton className="h-10 w-1/2" />
