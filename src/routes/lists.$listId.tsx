@@ -2,7 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Film, Lock, Users, Calendar, ArrowLeft } from "lucide-react";
-import { getPublicListDetail } from "@/lib/social.functions";
+import { getPublicListDetail, getMyListDetail } from "@/lib/social.functions";
 import { useAuth } from "@/hooks/useAuth";
 import { FollowButton } from "@/components/FollowButton";
 import { ListCard } from "@/components/ListCard";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TitleItem } from "@/lib/tmdb.functions";
+
 
 export const Route = createFileRoute("/lists/$listId")({
   loader: async ({ params }) => {
@@ -45,15 +46,27 @@ function ListDetailPage() {
   const { user } = useAuth();
   const initial = Route.useLoaderData();
   const listId = Route.useParams().listId;
+  const publicFn = useServerFn(getPublicListDetail);
+  const myFn = useServerFn(getMyListDetail);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["list-detail", listId],
-    queryFn: () => getPublicListDetail({ data: { listId } }),
+  const publicQuery = useQuery({
+    queryKey: ["list-detail", listId, "public"],
+    queryFn: () => publicFn({ data: { listId } }),
     initialData: initial ?? undefined,
     enabled: !!initial,
   });
 
+  const ownerQuery = useQuery({
+    queryKey: ["list-detail", listId, "owner"],
+    queryFn: () => myFn({ data: { listId } }),
+    enabled: !initial && !!user,
+  });
+
+  const data = publicQuery.data ?? ownerQuery.data;
+  const isLoading = publicQuery.isLoading || ownerQuery.isLoading;
+
   if (isLoading) {
+
     return (
       <main className="mx-auto max-w-[1200px] px-4 py-10 sm:px-8">
         <Skeleton className="h-10 w-1/2" />
