@@ -2,7 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Film, Lock, Users, Calendar, ArrowLeft } from "lucide-react";
-import { getPublicListDetail } from "@/lib/social.functions";
+import { getPublicListDetail, getMyListDetail } from "@/lib/social.functions";
 import { useAuth } from "@/hooks/useAuth";
 import { FollowButton } from "@/components/FollowButton";
 import { ListCard } from "@/components/ListCard";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TitleItem } from "@/lib/tmdb.functions";
+
 
 export const Route = createFileRoute("/lists/$listId")({
   loader: async ({ params }) => {
