@@ -173,8 +173,12 @@ Collections managed through the gateway:
 - `favorites`
 - `assistant_threads`
 - `assistant_messages`
+- `lists`
+- `list_items`
+- `follows`
 
 Authentication itself stays in Lovable Cloud / Supabase Auth. The gateway is only reached from server functions, which enforce ownership rules before querying MongoDB.
+
 
 ## Scripts
 
