@@ -149,10 +149,15 @@ mongo-api/
 | `/search` | Search titles |
 | `/auth` | Sign in / sign up |
 | `/dashboard` | Saved watchlist with study notes |
+| `/lists` | My curated learning lists (authenticated) |
+| `/lists/:id` | Public list detail |
+| `/community` | Discover public lists and creators |
+| `/users/:id` | Public profile and lists for a user |
 | `/assistant` | AI learning assistant conversations |
 | `/classroom` | Teacher/student classes and assignments |
 | `/admin` | Admin panel for users, roles and classrooms |
 | `/api/public/mongo-diag` | Connection diagnostic: app → gateway → MongoDB |
+
 
 ## Data model (MongoDB)
 
