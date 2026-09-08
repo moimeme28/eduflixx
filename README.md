@@ -23,6 +23,8 @@ An educational movie and series recommendation app. EduFlix helps students, teac
 - Role assignment during signup is now repaired on sign-in — teacher accounts created with the wrong role are fixed automatically.
 - The Mongo gateway opens connections lazily and stays healthy even when Atlas credentials are temporarily wrong, plus a root status endpoint (`/`) and a diagnostic route (`/api/public/mongo-diag`) in the app.
 - The Back button on title pages returns to the previous page in the viewer's history instead of always going home.
+- Social study clubs: public and private learning lists, user following, community discovery, and "Add to list" actions on titles.
+
 
 ## Tech stack
 
