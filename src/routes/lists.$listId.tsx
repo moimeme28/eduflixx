@@ -77,6 +77,19 @@ function ListDetailPage() {
   const data = publicQuery.data ?? ownerQuery.data;
   const isLoading = publicQuery.isLoading || ownerQuery.isLoading;
 
+  const queryClient = useQueryClient();
+  const removeFn = useServerFn(removeListItem);
+  const removeMut = useMutation({
+    mutationFn: (itemId: string) => removeFn({ data: { listId, itemId } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["list-detail", listId] });
+      queryClient.invalidateQueries({ queryKey: ["my-lists"] });
+      toast.success("Removed from list");
+    },
+    onError: (err) => toast.error((err as Error).message || "Could not remove title"),
+  });
+
+
   if (isLoading) {
 
     return (
