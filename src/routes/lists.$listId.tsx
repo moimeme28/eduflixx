@@ -77,6 +77,19 @@ function ListDetailPage() {
   const data = publicQuery.data ?? ownerQuery.data;
   const isLoading = publicQuery.isLoading || ownerQuery.isLoading;
 
+  const queryClient = useQueryClient();
+  const removeFn = useServerFn(removeListItem);
+  const removeMut = useMutation({
+    mutationFn: (itemId: string) => removeFn({ data: { listId, itemId } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["list-detail", listId] });
+      queryClient.invalidateQueries({ queryKey: ["my-lists"] });
+      toast.success("Removed from list");
+    },
+    onError: (err) => toast.error((err as Error).message || "Could not remove title"),
+  });
+
+
   if (isLoading) {
 
     return (
@@ -158,20 +171,42 @@ function ListDetailPage() {
         </div>
       </div>
 
-      {items.length === 0 ? (
-        <div className="mt-10 rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
-          This list is empty.
+      <section className="mt-10">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xl font-bold">Titles in this list</h2>
+          {isOwner && <AddTitleDialog listId={listId} />}
         </div>
-      ) : (
-        <section className="mt-10">
-          <h2 className="mb-4 text-xl font-bold">Titles in this list</h2>
+
+        {items.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
+            {isOwner ? "This list is empty — add the films you're talking about." : "This list is empty."}
+          </div>
+        ) : (
           <div className="flex flex-wrap gap-4">
-            {items.map((item) => (
-              <TitleCard key={`${item.mediaType}-${item.id}`} item={item} />
+            {items.map((item, idx) => (
+              <div key={`${item.mediaType}-${item.id}`} className="relative">
+                <TitleCard item={item} />
+                {data.items[idx]?.note && (
+                  <p className="mt-2 w-[150px] text-xs text-muted-foreground sm:w-[176px]">
+                    {data.items[idx]!.note}
+                  </p>
+                )}
+                {isOwner && (
+                  <button
+                    type="button"
+                    aria-label={`Remove ${item.title}`}
+                    onClick={() => removeMut.mutate(data.items[idx]!.id)}
+                    disabled={removeMut.isPending}
+                    className="absolute left-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-background/80 text-muted-foreground backdrop-blur transition-colors hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       {isOwner && (
         <div className="mt-10 rounded-2xl border border-primary/30 bg-primary/10 p-5 text-sm text-foreground/80">
@@ -182,6 +217,120 @@ function ListDetailPage() {
           .
         </div>
       )}
+
     </main>
   );
 }
+
+function AddTitleDialog({ listId }: { listId: string }) {
+  const queryClient = useQueryClient();
+  const searchFn = useServerFn(searchTitles);
+  const addFn = useServerFn(addListItem);
+  const [open, setOpen] = useState(false);
+  const [term, setTerm] = useState("");
+  const [query, setQuery] = useState("");
+  const [note, setNote] = useState("");
+
+  const results = useQuery({
+    queryKey: ["list-add-search", query],
+    queryFn: () => searchFn({ data: { query } }),
+    enabled: open && query.trim().length > 1,
+  });
+
+  const addMut = useMutation({
+    mutationFn: (item: TitleItem) =>
+      addFn({
+        data: {
+          listId,
+          tmdbId: item.id,
+          mediaType: item.mediaType,
+          title: item.title,
+          poster: item.poster,
+          year: item.year,
+          rating: item.rating,
+          note: note.trim() || null,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["list-detail", listId] });
+      queryClient.invalidateQueries({ queryKey: ["my-lists"] });
+      setNote("");
+      toast.success("Added to list");
+    },
+    onError: (err) => toast.error((err as Error).message || "Could not add title"),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="gap-2">
+          <Plus className="h-4 w-4" /> Add a title
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Add a film or series</DialogTitle>
+        </DialogHeader>
+
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setQuery(term);
+          }}
+        >
+          <Input
+            value={term}
+            onChange={(e) => setTerm(e.target.value)}
+            placeholder="Search by title, e.g. Interstellar"
+          />
+          <Button type="submit" size="icon" aria-label="Search">
+            <Search className="h-4 w-4" />
+          </Button>
+        </form>
+
+        <Input
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Optional note — why this title matters"
+        />
+
+        <div className="max-h-72 space-y-2 overflow-y-auto">
+          {results.isFetching && (
+            <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Searching…
+            </div>
+          )}
+          {!results.isFetching && results.data?.length === 0 && (
+            <p className="py-6 text-center text-sm text-muted-foreground">No titles found.</p>
+          )}
+          {results.data?.map((item) => (
+            <div
+              key={`${item.mediaType}-${item.id}`}
+              className="flex items-center gap-3 rounded-lg border border-border p-2"
+            >
+              <div className="h-16 w-11 shrink-0 overflow-hidden rounded bg-muted">
+                {item.poster && <img src={item.poster} alt={item.title} className="h-full w-full object-cover" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="line-clamp-1 text-sm font-medium">{item.title}</p>
+                <p className="text-xs text-muted-foreground">
+                  {item.mediaType === "tv" ? "Series" : "Film"} · {item.year || "—"}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={addMut.isPending}
+                onClick={() => addMut.mutate(item)}
+              >
+                Add
+              </Button>
+            </div>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
