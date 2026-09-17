@@ -171,20 +171,42 @@ function ListDetailPage() {
         </div>
       </div>
 
-      {items.length === 0 ? (
-        <div className="mt-10 rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
-          This list is empty.
+      <section className="mt-10">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xl font-bold">Titles in this list</h2>
+          {isOwner && <AddTitleDialog listId={listId} />}
         </div>
-      ) : (
-        <section className="mt-10">
-          <h2 className="mb-4 text-xl font-bold">Titles in this list</h2>
+
+        {items.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
+            {isOwner ? "This list is empty — add the films you're talking about." : "This list is empty."}
+          </div>
+        ) : (
           <div className="flex flex-wrap gap-4">
-            {items.map((item) => (
-              <TitleCard key={`${item.mediaType}-${item.id}`} item={item} />
+            {items.map((item, idx) => (
+              <div key={`${item.mediaType}-${item.id}`} className="relative">
+                <TitleCard item={item} />
+                {data.items[idx]?.note && (
+                  <p className="mt-2 w-[150px] text-xs text-muted-foreground sm:w-[176px]">
+                    {data.items[idx]!.note}
+                  </p>
+                )}
+                {isOwner && (
+                  <button
+                    type="button"
+                    aria-label={`Remove ${item.title}`}
+                    onClick={() => removeMut.mutate(data.items[idx]!.id)}
+                    disabled={removeMut.isPending}
+                    className="absolute left-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-background/80 text-muted-foreground backdrop-blur transition-colors hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       {isOwner && (
         <div className="mt-10 rounded-2xl border border-primary/30 bg-primary/10 p-5 text-sm text-foreground/80">
@@ -195,6 +217,7 @@ function ListDetailPage() {
           .
         </div>
       )}
+
     </main>
   );
 }
