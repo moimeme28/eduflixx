@@ -1,6 +1,7 @@
 import { requireAuthDb } from "@/lib/db-middleware";
 import { aggregateClassTotals } from "@/lib/classroom-progress";
 import { createServerFn } from "@tanstack/react-start";
+import { sendClassInviteEmail } from "@/lib/email.server";
 
 export type Role = "student" | "teacher" | "admin";
 
@@ -157,20 +158,32 @@ export const listMyClasses = createServerFn({ method: "GET" })
       }
     }
 
-    const enrolled = (memRes.data ?? [])
-      .map((r) => {
-        const c = Array.isArray(r.classes) ? r.classes[0] : r.classes;
-        if (!c) return null;
-        return {
-          id: c.id,
-          name: c.name,
-          description: c.description,
-          subject: c.subject,
-          teacherId: c.teacher_id,
-          createdAt: c.created_at,
-        };
-      })
-      .filter((v): v is ClassRow => v !== null);
+    // The Mongo gateway doesn't support PostgREST-style embeds, so fetch
+    // class details separately for each enrolled membership.
+    const membershipRows = (memRes.data ?? []) as { class_id: string }[];
+    const enrolledClassIds = membershipRows
+      .map((m) => m.class_id)
+      .filter((id): id is string => typeof id === "string");
+    let enrolled: ClassRow[] = [];
+    if (enrolledClassIds.length > 0) {
+      const enrolledRes = await context.db
+        .from("classes")
+        .select("id, name, description, subject, teacher_id, created_at")
+        .in("id", enrolledClassIds)
+        .order("created_at", { ascending: false });
+      enrolled = (enrolledRes.data ?? []).map((c) => ({
+        id: c.id,
+        name: c.name,
+        description: c.description,
+        subject: c.subject,
+        teacherId: c.teacher_id,
+        createdAt: c.created_at,
+        memberCount: 0,
+        assignmentCount: 0,
+        completedCount: 0,
+        expectedCompletionCount: 0,
+      }));
+    }
     return { teaching, enrolled };
   });
 
@@ -354,7 +367,30 @@ export const inviteStudent = createServerFn({ method: "POST" })
       { onConflict: "class_id,email" },
     );
     if (error) throw new Error(error.message);
-    return { ok: true };
+
+    // Fetch class name + teacher display name for the email.
+    const { data: cls } = await context.db
+      .from("classes")
+      .select("name")
+      .eq("id", data.classId)
+      .maybeSingle();
+    const { data: prof } = await context.db
+      .from("profiles")
+      .select("display_name")
+      .eq("id", context.userId)
+      .maybeSingle();
+
+    const className = cls?.name ?? "a class";
+    const teacherName = prof?.display_name ?? (context.claims?.email as string | undefined)?.split("@")[0] ?? "Your teacher";
+
+    const emailResult = await sendClassInviteEmail({
+      to: email,
+      className,
+      teacherName,
+      appUrl: "http://localhost:8080",
+    });
+
+    return { ok: true, emailSent: emailResult.ok, emailError: emailResult.error };
   });
 
 export const revokeInvite = createServerFn({ method: "POST" })

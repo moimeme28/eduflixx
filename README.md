@@ -12,7 +12,7 @@ An educational movie and series recommendation app. EduFlix helps students, teac
 - **Save and annotate** — Sign in to bookmark titles and add personal study notes on the watchlist dashboard.
 - **AI learning assistant** — Ask for recommendations ("I want to learn genetics", "World War II documentaries") and get threaded, explained suggestions.
 - **Community lists** — Create, share and discover curated learning lists. Follow other learners and see lists from people you follow.
-- **Classrooms** — Teachers can create classes, invite students, build playlists and assign titles; students track assignment progress.
+- **Classrooms** — Teachers can create classes, invite students by email (with automatic enrollment on sign-in), build playlists and assign titles; students track assignment progress.
 - **Admin controls** — First user can claim admin access, then manage roles, users, classes and assignments.
 
 
@@ -24,6 +24,12 @@ An educational movie and series recommendation app. EduFlix helps students, teac
 - The Mongo gateway opens connections lazily and stays healthy even when Atlas credentials are temporarily wrong, plus a root status endpoint (`/`) and a diagnostic route (`/api/public/mongo-diag`) in the app.
 - The Back button on title pages returns to the previous page in the viewer's history instead of always going home.
 - Social study clubs: public and private learning lists, user following, community discovery, and "Add to list" actions on titles.
+- Password strength meter on sign-up — live checklist enforcing 8+ characters, uppercase, lowercase, number, and special character, with a visual strength bar.
+- Google OAuth button removed — authentication is now email/password only (Supabase Auth).
+- `.npmrc` with `legacy-peer-deps=true` added so `npm install` works alongside Bun (resolves `zod` v3/v4 peer dependency conflict between `@tanstack/zod-adapter` and the `ai` SDK).
+- Student "enrolled classes" list fixed — `listMyClasses` now fetches class details separately instead of relying on PostgREST-style joins (which the Mongo gateway doesn't support). Students can now see their joined classes.
+- Class invitation emails — teachers can now send real email notifications when inviting students, powered by Resend. Without `RESEND_API_KEY`, invites still work (auto-join on sign-in) but no email is sent.
+- Orphaned Lovable auth integration removed — `src/integrations/lovable/` directory and `@lovable.dev/cloud-auth-js` dependency deleted (no longer imported after Google OAuth removal).
 
 
 ## Tech stack
@@ -34,10 +40,11 @@ An educational movie and series recommendation app. EduFlix helps students, teac
 | Language | TypeScript |
 | Styling | Tailwind CSS v4 |
 | Components | shadcn/ui + Radix |
-| Auth | Lovable Cloud (Supabase Auth) — email/password + Google OAuth |
+| Auth | Supabase Auth — email/password |
 | App data | MongoDB Atlas |
 | Movie data | TMDB API |
-| AI | Lovable AI Gateway via `ai-sdk` |
+| AI | Google Gemini via `ai-sdk` (`@ai-sdk/openai-compatible`) |
+| Email | Resend (class invitation emails) |
 | Hosting | Cloudflare Workers (app) + Render/Railway/Fly (Mongo gateway) |
 
 ## Why MongoDB via a gateway?
@@ -64,9 +71,17 @@ VITE_SUPABASE_ANON_KEY=...
 # TMDB (movie data)
 TMDB_API_KEY=...
 
+# Google Gemini (AI chat + study guides)
+LOVABLE_API_KEY=...
+
 # Mongo API gateway (data layer)
 MONGO_API_URL=https://your-gateway.onrender.com
 MONGO_API_KEY=...
+
+# Resend (email notifications for class invitations)
+# Sign up at https://resend.com — free tier is 100 emails/day.
+# Without this, invites still work (auto-join on sign-in) but no email is sent.
+RESEND_API_KEY=...
 ```
 
 ### 3. Run the dev server
@@ -76,6 +91,8 @@ bun dev
 ```
 
 Open `http://localhost:8080`.
+
+> **Password requirements:** When creating an account, passwords must be at least 8 characters and include an uppercase letter, lowercase letter, number, and special character. A live strength meter is shown on the sign-up form.
 
 ### 4. Run the Mongo API gateway locally (optional)
 
@@ -100,8 +117,10 @@ Then set `MONGO_API_URL=http://localhost:8787` in the app `.env`.
 | `VITE_SUPABASE_URL` | Lovable Cloud / Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | Public Supabase anon key |
 | `TMDB_API_KEY` | API key from [TMDB](https://www.themoviedb.org/settings/api) |
+| `LOVABLE_API_KEY` | Google Gemini API key (powers AI chat + study guides) |
 | `MONGO_API_URL` | HTTPS endpoint of the `mongo-api` service |
 | `MONGO_API_KEY` | Shared secret between app and gateway |
+| `RESEND_API_KEY` | Resend API key for sending class invitation emails (optional — invites work without it) |
 
 ### Mongo API gateway (Render / Railway / Fly)
 
@@ -127,8 +146,8 @@ Then set `MONGO_API_URL=http://localhost:8787` in the app `.env`.
 src/
   components/       UI components (Navbar, Rail, TitleCard, AssistantChat, etc.)
   hooks/            React hooks (auth, favorites, role, mobile)
-  integrations/     Lovable Cloud and Supabase clients
-  lib/              Server functions, data layer, utilities
+  integrations/     Supabase client
+  lib/              Server functions, data layer, email helper, utilities
   routes/           TanStack file-based routes
   styles.css        Tailwind v4 theme and global styles
 
@@ -136,6 +155,8 @@ mongo-api/
   server.js         Express HTTPS gateway to MongoDB Atlas
   migrate.js        Postgres → MongoDB migration script
   README.md         Gateway-specific docs
+
+.npmrc              legacy-peer-deps=true (npm compatibility with Bun's loose peer deps)
 ```
 
 ## Key routes
@@ -147,7 +168,7 @@ mongo-api/
 | `/subject/:slug` | Subject page with topic filters |
 | `/title/:type/:id` | Movie / series detail page |
 | `/search` | Search titles |
-| `/auth` | Sign in / sign up |
+| `/auth` | Sign in / sign up (password strength meter on sign-up) |
 | `/dashboard` | Saved watchlist with study notes |
 | `/lists` | My curated learning lists (authenticated) |
 | `/lists/:id` | Public list detail |

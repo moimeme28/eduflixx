@@ -1,13 +1,39 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { Eye, EyeOff } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Eye, EyeOff, Check, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-
-import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { GraduationCap } from "lucide-react";
 import assistantAvatar from "@/assets/assistant-avatar.png";
+
+type Rule = { label: string; pass: boolean };
+
+function usePasswordRules(pw: string): Rule[] {
+  return useMemo(
+    () => [
+      { label: "At least 8 characters", pass: pw.length >= 8 },
+      { label: "Uppercase letter (A-Z)", pass: /[A-Z]/.test(pw) },
+      { label: "Lowercase letter (a-z)", pass: /[a-z]/.test(pw) },
+      { label: "Number (0-9)", pass: /\d/.test(pw) },
+      { label: "Special character (!@#$…)", pass: /[^A-Za-z0-9]/.test(pw) },
+    ],
+    [pw],
+  );
+}
+
+function strengthScore(rules: Rule[]): number {
+  return rules.filter((r) => r.pass).length;
+}
+
+const STRENGTH_META = [
+  { label: "Very weak", color: "bg-red-500", text: "text-red-500" },
+  { label: "Weak", color: "bg-orange-500", text: "text-orange-500" },
+  { label: "Fair", color: "bg-yellow-500", text: "text-yellow-500" },
+  { label: "Good", color: "bg-lime-500", text: "text-lime-500" },
+  { label: "Strong", color: "bg-green-500", text: "text-green-500" },
+  { label: "Very strong", color: "bg-green-600", text: "text-green-600" },
+];
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
@@ -30,6 +56,10 @@ function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const passwordRules = usePasswordRules(password);
+  const score = strengthScore(passwordRules);
+  const strength = STRENGTH_META[score];
+  const passwordsMatchRules = score === 5;
 
   useEffect(() => {
     if (!loading && user) navigate({ to: "/dashboard" });
@@ -42,6 +72,11 @@ function AuthPage() {
     setNotice(null);
     try {
       if (mode === "signup") {
+        if (!passwordsMatchRules) {
+          setError("Please choose a password that meets all the strength requirements.");
+          setBusy(false);
+          return;
+        }
         const { error: suError } = await supabase.auth.signUp({
           email,
           password,
@@ -67,19 +102,6 @@ function AuthPage() {
     }
   }
 
-  async function handleGoogle() {
-    setError(null);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/auth",
-    });
-    if (result.error) {
-      setError("Google sign-in failed. Please try again.");
-      return;
-    }
-    if (result.redirected) return;
-    navigate({ to: "/dashboard" });
-  }
-
   return (
     <div className="mx-auto flex min-h-[calc(100vh-64px)] max-w-md flex-col justify-center px-4 py-12">
       <div className="glass rounded-2xl border border-border p-8">
@@ -91,14 +113,6 @@ function AuthPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             Chat with the EduFlix learning assistant and keep your study threads.
           </p>
-        </div>
-
-        <Button onClick={handleGoogle} variant="secondary" className="w-full">
-          Continue with Google
-        </Button>
-
-        <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
         </div>
 
         <form onSubmit={handleEmail} className="space-y-3">
@@ -114,7 +128,7 @@ function AuthPage() {
             <input
               type={showPassword ? "text" : "password"}
               required
-              minLength={6}
+              minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
@@ -129,6 +143,38 @@ function AuthPage() {
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
+          {mode === "signup" && password.length > 0 && (
+            <div className="space-y-1.5 rounded-lg border border-border bg-card/40 px-3 py-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-muted-foreground">Password strength</span>
+                <span className={`text-xs font-semibold ${strength.text}`}>
+                  {strength.label}
+                </span>
+              </div>
+              <div className="flex gap-1">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className={`h-1.5 flex-1 rounded-full transition-colors ${
+                      i < score ? strength.color : "bg-border"
+                    }`}
+                  />
+                ))}
+              </div>
+              <ul className="mt-1 space-y-0.5">
+                {passwordRules.map((r) => (
+                  <li key={r.label} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    {r.pass ? (
+                      <Check className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <X className="h-3 w-3 text-muted-foreground/60" />
+                    )}
+                    {r.label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {mode === "signup" && (
             <div>
               <p className="mb-1.5 text-xs font-medium text-muted-foreground">I am a…</p>

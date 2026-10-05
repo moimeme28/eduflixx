@@ -141,8 +141,15 @@ function InviteForm({ classId }: { classId: string }) {
   const [email, setEmail] = useState("");
   const mut = useMutation({
     mutationFn: () => inviteFn({ data: { classId, email } }),
-    onSuccess: () => {
-      toast.success("Invitation added");
+    onSuccess: (res) => {
+      if (res?.emailSent) {
+        toast.success(`Invitation sent to ${email} — the student will receive an email.`);
+      } else {
+        toast.success(`Invitation added — the student will be added when they sign in with ${email}.`);
+        if (res?.emailError) {
+          console.warn("Email not sent:", res.emailError);
+        }
+      }
       setEmail("");
       qc.invalidateQueries({ queryKey: ["class-detail", classId] });
     },

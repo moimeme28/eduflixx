@@ -69,11 +69,12 @@ export const Route = createFileRoute("/api/chat")({
 
         const db = createMongoDb();
 
-        // Persist the incoming user message + set the thread title if needed.
+        // Persist the incoming user message + set the thread title (non-blocking
+        // so the AI stream starts immediately without waiting for the DB write).
         if (threadId) {
           const lastUser = [...messages].reverse().find((m) => m.role === "user");
           if (lastUser) {
-            await db.from("assistant_messages").insert({
+            db.from("assistant_messages").insert({
               thread_id: threadId,
               user_id: auth.userId,
               role: "user",
@@ -81,7 +82,7 @@ export const Route = createFileRoute("/api/chat")({
             });
             const title = messageText(lastUser).slice(0, 60);
             if (title) {
-              await db
+              db
                 .from("assistant_threads")
                 .update({ title })
                 .eq("id", threadId)
@@ -92,13 +93,14 @@ export const Route = createFileRoute("/api/chat")({
         }
 
         const gateway = createLovableAiGatewayProvider(key);
-        const model = gateway("google/gemini-3-flash-preview");
+        const model = gateway("gemini-2.0-flash-lite");
 
         const result = streamText({
           model,
           system: SYSTEM_PROMPT,
           messages: await convertToModelMessages(messages),
-          stopWhen: stepCountIs(5),
+          stopWhen: stepCountIs(3),
+          maxRetries: 1,
           tools: {
             recommend_titles: tool({
               description:

@@ -8,7 +8,6 @@ import { FavoriteButton } from "@/components/FavoriteButton";
 import { AddToListButton } from "@/components/AddToListButton";
 import { TitleCard } from "@/components/TitleCard";
 
-import { StudyGuide } from "@/components/StudyGuide";
 import { WhereToWatch } from "@/components/WhereToWatch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -199,8 +198,7 @@ function TitlePage() {
               <p className="mt-2 text-sm text-foreground/80">
                 A great fit for exploring{" "}
                 {data.genres.length ? data.genres.slice(0, 2).join(" & ").toLowerCase() : "the topic"}{" "}
-                through story and real footage. AI-generated learning objectives and quizzes are coming
-                soon.
+                through story and real footage.
               </p>
             </div>
 
@@ -214,15 +212,6 @@ function TitlePage() {
             )}
           </div>
         </div>
-        {/* AI Study Guide */}
-        <StudyGuide
-          title={data.title}
-          mediaType={type}
-          overview={data.overview}
-          genres={data.genres}
-          year={data.year}
-        />
-
         {/* Cast */}
 
         {data.cast.length > 0 && (
