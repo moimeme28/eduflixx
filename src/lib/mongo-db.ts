@@ -31,25 +31,47 @@ function endpoint(): { url: string; key: string } {
 
 async function call(collection: string, op: string, body: Row): Promise<any> {
   const { url, key } = endpoint();
-  const res = await fetch(`${url}/v1/${collection}/${op}`, {
-    method: "POST",
-    headers: { "content-type": "application/json", "x-api-key": key },
-    body: JSON.stringify(body),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const gatewayMessage = typeof json?.error === "string" ? json.error : "";
-    if (/bad auth|authentication failed/i.test(gatewayMessage)) {
-      throw new Error(
-        "The database gateway cannot authenticate to MongoDB. Update MONGODB_URI on the gateway service and redeploy it.",
-      );
+  const MAX_RETRIES = 2;
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30_000);
+    try {
+      const res = await fetch(`${url}/v1/${collection}/${op}`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-api-key": key },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const gatewayMessage = typeof json?.error === "string" ? json.error : "";
+        if (/bad auth|authentication failed/i.test(gatewayMessage)) {
+          throw new Error(
+            "The database gateway cannot authenticate to MongoDB. Update MONGODB_URI on the gateway service and redeploy it.",
+          );
+        }
+        if (res.status === 503) {
+          throw new Error("The database is temporarily unavailable. Please try again shortly.");
+        }
+        throw new Error(gatewayMessage || `Mongo API ${op} failed (${res.status})`);
+      }
+      return json;
+    } catch (err) {
+      clearTimeout(timeout);
+      lastError = err;
+      // Retry on network errors / aborts (Render free-tier cold starts can take 30-60s).
+      const isNetwork =
+        err instanceof TypeError ||
+        (err instanceof DOMException && err.name === "AbortError") ||
+        (err instanceof Error && /fetch failed|network|abort|ECONNRESET/i.test(err.message));
+      if (!isNetwork || attempt === MAX_RETRIES) throw err;
+      // Brief pause before retrying.
+      await new Promise((r) => setTimeout(r, 2000));
     }
-    if (res.status === 503) {
-      throw new Error("The database is temporarily unavailable. Please try again shortly.");
-    }
-    throw new Error(gatewayMessage || `Mongo API ${op} failed (${res.status})`);
   }
-  return json;
+  throw lastError;
 }
 
 function nowIso(): string {
