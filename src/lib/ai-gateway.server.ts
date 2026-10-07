@@ -1,14 +1,15 @@
 // Server-only helper connecting the AI SDK to the Google Gemini API.
-// Google exposes an OpenAI-compatible endpoint, so we use @ai-sdk/openai-compatible
-// to stream chat completions and generate structured objects with Gemini models.
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+//
+// Uses the native @ai-sdk/google provider instead of the OpenAI-compat
+// shim so that Gemini's `thought_signature` round-trip works correctly.
+// Without it, follow-up turns after a tool call fail with
+// "Function call is missing a thought_signature" (400).
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
 export function createLovableAiGatewayProvider(apiKey: string) {
-  return createOpenAICompatible({
-    name: "google-gemini",
-    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-    },
-  });
+  const google = createGoogleGenerativeAI({ apiKey });
+  // gemini-flash-lite-latest is the rolling alias that always points
+  // to the current stable Flash-Lite model, which handles tool calls
+  // and text responses well within the free-tier rate limits.
+  return (modelId: string) => google(modelId);
 }

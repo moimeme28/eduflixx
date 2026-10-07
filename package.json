@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@ai-sdk/google": "^4.0.87",
     "@ai-sdk/openai-compatible": "^3.0.7",
     "@ai-sdk/react": "^4.0.23",
     "@hookform/resolvers": "^5.2.2",
