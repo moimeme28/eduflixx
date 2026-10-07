@@ -208,6 +208,8 @@ Open **http://localhost:8080** — you should see the home page with featured co
 
 The project is two separate services. **Deploy the gateway first** so you have a public `MONGO_API_URL` for the app.
 
+> **One-click option:** This repo includes a `render.yaml` blueprint. In Render, go to **New → Blueprint**, connect the repo, and Render creates both services at once. You just fill in the env vars marked `sync: false`.
+
 ### A. Deploy the MongoDB gateway
 
 Deploy the `mongo-api/` folder to any Node host:
@@ -238,7 +240,7 @@ Deploy the `mongo-api/` folder to any Node host:
 
 ### B. Deploy the app
 
-The app builds with Nitro (via `@lovable.dev/vite-tanstack-config`). The default Nitro preset targets Cloudflare Workers.
+The app builds with Nitro. By default, `vite.config.ts` sets the Nitro preset to `node-server` so the build outputs a standard Node server at `.output/server/index.mjs`. This runs on any Node host.
 
 **Build:**
 
@@ -246,13 +248,26 @@ The app builds with Nitro (via `@lovable.dev/vite-tanstack-config`). The default
 bun run build
 ```
 
-This outputs to `.output/`.
+This outputs to `.output/`. The server entry is `.output/server/index.mjs`.
 
-**Option 1 — Cloudflare Workers (default preset):**
+> **Cloudflare Workers?** Set `NITRO_PRESET=cloudflare-module` during build to target Workers instead of Node.
 
-1. Install Wrangler: `npm install -g wrangler`
-2. Login: `wrangler login`
-3. Create `wrangler.toml` at the project root:
+**Option 1 — Render / Railway / Fly (Node server — default):**
+
+| Setting | Value |
+| --- | --- |
+| Root directory | *(project root)* |
+| Build command | `npm install && npm run build` |
+| Start command | `node .output/server/index.mjs` |
+
+Set all the env vars from the [App](#app-env-in-project-root) table, using your deployed gateway URL for `MONGO_API_URL` and the same `MONGO_API_KEY` as the gateway.
+
+**Option 2 — Cloudflare Workers:**
+
+1. Build with the Cloudflare preset: `NITRO_PRESET=cloudflare-module bun run build`
+2. Install Wrangler: `npm install -g wrangler`
+3. Login: `wrangler login`
+4. Create `wrangler.toml` at the project root:
 
    ```toml
    name = "eduflix"
@@ -261,7 +276,7 @@ This outputs to `.output/`.
    assets = { directory = ".output/public", binding = "ASSETS" }
    ```
 
-4. Set each secret (paste the value when prompted):
+5. Set each secret (paste the value when prompted):
 
    ```bash
    wrangler secret put SUPABASE_URL
@@ -274,16 +289,7 @@ This outputs to `.output/`.
    wrangler secret put RESEND_API_KEY
    ```
 
-5. Deploy: `wrangler deploy`
-6. You'll get a URL like `https://eduflix.<your-subdomain>.workers.dev`
-
-**Option 2 — Render / Railway / Fly (Node server):**
-
-If Cloudflare Workers isn't an option, deploy as a Node server instead:
-
-- Build command: `npm install && npm run build`
-- Start command: `node .output/server/index.mjs`
-- Set all the env vars from the [App](#app-env-in-project-root) table as secrets, using your deployed gateway URL for `MONGO_API_URL`.
+6. Deploy: `wrangler deploy`
 
 ### C. Post-deploy checklist
 

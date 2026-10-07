@@ -6,10 +6,17 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+// Override the Nitro preset so the production build targets Node instead of
+// Cloudflare Workers. This makes the build output runnable on any Node host
+// (Render, Railway, Fly) via `node .output/server/index.mjs`.
+// To build for Cloudflare Workers instead, set NITRO_PRESET=cloudflare-module.
+const nitroPreset = process.env.NITRO_PRESET || "node-server";
+
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  nitro: { preset: nitroPreset },
 });

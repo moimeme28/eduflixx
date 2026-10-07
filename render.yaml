@@ -1,0 +1,48 @@
+# Render Blueprint — deploys both services from one repo.
+# Go to https://dashboard.render.com → New → Blueprint → connect your repo.
+# Render reads this file and creates both services automatically.
+
+services:
+  # 1. MongoDB gateway (Express → MongoDB Atlas)
+  - type: web
+    name: eduflix-api
+    env: node
+    rootDir: mongo-api
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    plan: free
+    envVars:
+      - key: MONGODB_URI
+        sync: false  # set in Render dashboard
+      - key: MONGODB_DB
+        value: eduflix
+      - key: MONGO_API_KEY
+        sync: false  # set in Render dashboard — must match the app
+
+  # 2. EduFlix app (Vite/TanStack Start → Nitro Node server)
+  - type: web
+    name: eduflix
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: node .output/server/index.mjs
+    plan: free
+    envVars:
+      - key: NITRO_PRESET
+        value: node-server
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: TMDB_API_KEY
+        sync: false
+      - key: LOVABLE_API_KEY
+        sync: false
+      - key: MONGO_API_URL
+        sync: false  # set to the eduflix-api service URL
+      - key: MONGO_API_KEY
+        sync: false  # must match the gateway's MONGO_API_KEY
+      - key: RESEND_API_KEY
+        sync: false  # optional
